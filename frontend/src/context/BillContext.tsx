@@ -14,13 +14,10 @@ export interface BillItem {
   item_variant_id: number;
   item_quantity: number;
   item_price?: number;
-  deposit_amount_per_item?: number;
 }
 export interface Bill {
   id: number;
   date: string;
-  total_amount?: number;
-  total_deposit_amount?: number;
   is_deleted?: boolean;
   items: BillItem[];
 }

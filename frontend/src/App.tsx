@@ -3,6 +3,8 @@ import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Billing, Landing, Service, Order } from "./pages";
 import { ToastContainer } from "react-toastify";
 import { PersistentCartProvider } from "./context/PersistentCartContext";
+import { BillProvider } from "./context/BillContext";
+import { ProductProvider } from "./context/ProductContext";
 
 // Theme Context für globalen Zugriff
 export const ThemeContext = React.createContext<{
@@ -33,17 +35,21 @@ export default function App() {
 
   return (
     <ThemeContext.Provider value={{ theme, switchTheme }}>
-      <PersistentCartProvider>
-        <BrowserRouter>
-          <ToastContainer position="top-right" autoClose={2000} />
-          <Routes>
-            <Route path="/" element={<Landing />} />
-            <Route path="/service" element={<Service />} />
-            <Route path="/order" element={<Order />} />
-            <Route path="/billing" element={<Billing />} />
-          </Routes>
-        </BrowserRouter>
-      </PersistentCartProvider>
+      <ProductProvider>
+        <BillProvider>
+          <PersistentCartProvider>
+            <BrowserRouter>
+              <ToastContainer position="top-right" autoClose={2000} />
+              <Routes>
+                <Route path="/" element={<Landing />} />
+                <Route path="/service" element={<Service />} />
+                <Route path="/order" element={<Order />} />
+                <Route path="/billing" element={<Billing />} />
+              </Routes>
+            </BrowserRouter>
+          </PersistentCartProvider>
+        </BillProvider>
+      </ProductProvider>
     </ThemeContext.Provider>
   );
 }

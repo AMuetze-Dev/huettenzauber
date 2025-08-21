@@ -94,14 +94,14 @@
 .cartItems {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-lg);
+  gap: var(--spacing-sm);
 }
 
 .cartItem {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
-  padding: var(--spacing-lg);
+  padding: var(--spacing-sm);
   transition: all 0.3s ease;
 }
 
@@ -111,40 +111,34 @@
   background: rgba(244, 67, 54, 0.05);
 }
 
+.itemRow {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  justify-content: space-between;
+}
+
 .itemInfo {
   display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: var(--spacing-lg);
-  gap: var(--spacing-lg);
-}
-
-.itemDetails {
+  align-items: center;
+  gap: var(--spacing-sm);
   flex: 1;
+  min-width: 0;
 }
 
-.itemDetails h4 {
+.itemName {
   color: var(--color-text-primary);
-  font-size: var(--fs-300);
-  margin: 0 0 var(--spacing-xs) 0;
+  font-size: var(--fs-200);
   font-weight: var(--font-weight-semibold);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .variant {
-  display: block;
   color: var(--color-text-secondary);
   font-size: var(--fs-100);
-  margin-bottom: var(--spacing-xs);
-}
-
-.category {
-  display: inline-block;
-  background: var(--color-accent);
-  color: var(--color-black);
-  padding: var(--spacing-xs) var(--spacing-sm);
-  border-radius: var(--radius-sm);
-  font-size: var(--fs-100);
-  font-weight: var(--font-weight-medium);
+  white-space: nowrap;
 }
 
 .priceInfo {
@@ -152,90 +146,38 @@
   flex-direction: column;
   align-items: flex-end;
   gap: var(--spacing-xs);
+  min-width: 80px;
 }
 
 .unitPrice {
   color: var(--color-text-secondary);
   font-size: var(--fs-100);
+  white-space: nowrap;
 }
 
 .totalPrice {
   color: var(--color-accent);
-  font-size: var(--fs-300);
+  font-size: var(--fs-200);
   font-weight: var(--font-weight-bold);
+  white-space: nowrap;
 }
 
 /* === CONTROLS === */
-.controls {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--spacing-lg);
-}
-
-.quantityControls {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-sm);
-  background: var(--card-background);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  padding: var(--spacing-sm);
-}
-
-.quantityBtn {
-  width: 32px;
-  height: 32px;
-  border-radius: var(--radius-sm);
-  background: var(--color-accent);
-  color: var(--color-black);
-  border: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.quantityBtn:hover:not(:disabled) {
-  background: var(--color-accent-hover);
-  transform: scale(1.05);
-}
-
-.quantityBtn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.quantityInput {
-  width: 60px;
-  text-align: center;
-  border: none;
-  background: transparent;
-  color: var(--color-text-primary);
-  font-size: var(--fs-200);
-  font-weight: var(--font-weight-medium);
-  padding: var(--spacing-xs);
-}
-
-.quantityInput:focus {
-  outline: none;
-  background: var(--color-gray-50);
-  border-radius: var(--radius-sm);
-}
+/* Alte quantityControls entfernt - wird durch countingControls ersetzt */
 
 .removeBtn {
   background: transparent;
   border: 1px solid var(--color-gray-300);
   color: var(--color-text-secondary);
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   border-radius: var(--radius-lg);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   transition: all 0.2s ease;
+  flex-shrink: 0;
 }
 
 .removeBtn:hover {
@@ -244,37 +186,364 @@
   color: #f44336;
 }
 
-/* === FOOTER === */
-.footer {
-  border-top: 1px solid var(--color-border);
-  padding: var(--spacing-xl);
-  background: var(--color-surface);
-}
-
-.summary {
-  margin-bottom: var(--spacing-lg);
-}
-
-.summaryRow {
+/* === EINHEITLICHES GRID SYSTEM === */
+.gridRow {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: var(--spacing-sm) 0;
   color: var(--color-text-primary);
   font-size: var(--fs-200);
+  border-bottom: 1px solid transparent;
 }
 
-.summaryRow:last-child {
-  border-top: 1px solid var(--color-border);
-  padding-top: var(--spacing-md);
-  margin-top: var(--spacing-sm);
+.gridRow.bordered {
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: var(--spacing-md);
+  margin-bottom: var(--spacing-sm);
   font-weight: var(--font-weight-semibold);
 }
 
-.totalAmount {
+.gridLabel {
+  color: var(--color-text-primary);
+  font-size: var(--fs-200);
+  font-weight: var(--font-weight-medium);
+  white-space: nowrap;
+  min-width: fit-content;
+}
+
+.gridValue {
   color: var(--color-accent);
-  font-size: var(--fs-400);
+  font-size: var(--fs-200);
   font-weight: var(--font-weight-bold);
+  white-space: nowrap;
+}
+
+.gridValue.large {
+  font-size: var(--fs-300);
+}
+
+.gridValue.success {
+  color: var(--color-success, #10b981);
+}
+
+/* === EINHEITLICHE ZÄHLMECHANIK === */
+.countingControls {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  border-left: 1px solid var(--color-border);
+  border-right: 1px solid var(--color-border);
+  padding: 0 var(--spacing-sm);
+  margin: 0 var(--spacing-sm);
+}
+
+.countingBtn {
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radius-sm);
+  background: var(--color-accent);
+  color: var(--color-black);
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.countingBtn:hover:not(:disabled) {
+  background: var(--color-accent-hover);
+  transform: scale(1.05);
+}
+
+.countingBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.countingInput {
+  width: 40px;
+  text-align: center;
+  border: none;
+  background: transparent;
+  color: var(--color-text-primary);
+  font-size: var(--fs-100);
+  font-weight: var(--font-weight-medium);
+  padding: var(--spacing-xs);
+}
+
+.countingInput:focus {
+  outline: none;
+  background: var(--color-gray-50);
+  border-radius: var(--radius-sm);
+}
+.footer {
+  border-top: 1px solid var(--color-border);
+  padding: var(--spacing-lg);
+  background: var(--color-surface);
+}
+
+.summary {
+  margin-bottom: var(--spacing-md);
+}
+
+/* Alte summaryRow Regeln entfernt - werden durch gridRow ersetzt */
+
+/* === CHECKOUT FUNCTIONALITY === */
+.checkoutOptions {
+  margin-bottom: var(--spacing-md);
+  padding: var(--spacing-md) var(--spacing-md);
+  background: var(--card-background);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+
+.checkboxLabel {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  color: var(--color-text-primary);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  margin-bottom: var(--spacing-sm);
+}
+
+.checkboxLabel input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--color-accent);
+}
+
+.inputGroup {
+  margin-top: var(--spacing-sm);
+  padding-left: var(--spacing-md);
+}
+
+.inputGroup label {
+  display: block;
+  color: var(--color-text-secondary);
+  font-size: var(--fs-100);
+  margin-bottom: var(--spacing-xs);
+}
+
+.amountInput {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-sm);
+}
+
+.amountInput input {
+  flex: 1;
+  max-width: 100px;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: var(--fs-100);
+  color: var(--color-text-primary);
+  background: var(--card-background);
+}
+
+.amountInput input:focus {
+  outline: none;
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 2px rgba(238, 130, 238, 0.2);
+}
+
+.amountInput span {
+  color: var(--color-text-secondary);
+  font-weight: var(--font-weight-medium);
+  font-size: var(--fs-100);
+}
+
+.changeResult {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  background: var(--color-surface);
+  border-radius: var(--radius-sm);
+  font-weight: var(--font-weight-medium);
+  font-size: var(--fs-100);
+}
+
+.changeResult .positive {
+  color: var(--color-success, #10b981);
+}
+
+.changeResult .negative {
+  color: var(--color-error, #ef4444);
+}
+
+/* === KOMPAKTER RÜCKGELDRECHNER === */
+.changeCalculatorSection {
+  margin-bottom: var(--spacing-sm);
+  padding: var(--spacing-sm) 0;
+}
+
+.changeCalculatorRow {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  flex-wrap: nowrap;
+}
+
+.changeLabel {
+  color: var(--color-text-primary);
+  font-size: var(--fs-200);
+  font-weight: var(--font-weight-medium);
+  white-space: nowrap;
+  min-width: fit-content;
+}
+
+.changeField {
+  width: 80px;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: var(--fs-100);
+  color: var(--color-text-primary);
+  background: var(--card-background);
+  text-align: center;
+}
+
+.changeField:focus {
+  outline: none;
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 2px rgba(238, 130, 238, 0.2);
+}
+
+.changeCalculatorRow .amountInput {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  margin-bottom: 0;
+}
+
+.changeCalculatorRow .amountInput span {
+  color: var(--color-text-secondary);
+  font-size: var(--fs-100);
+  font-weight: var(--font-weight-medium);
+}
+
+.changeCalculatorRow .changeResult {
+  color: var(--color-text-primary);
+  font-size: var(--fs-200);
+  font-weight: var(--font-weight-medium);
+  white-space: nowrap;
+  min-width: 120px;
+}
+
+/* === AUTOMATISIERTE PFANDRÜCKGABE === */
+
+.depositReturnRow {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  flex-wrap: nowrap;
+}
+
+.depositLabel {
+  color: var(--color-text-primary);
+  font-size: var(--fs-200);
+  font-weight: var(--font-weight-medium);
+  white-space: nowrap;
+  min-width: fit-content;
+}
+
+.priceInput {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.priceField {
+  width: 60px;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: var(--fs-100);
+  color: var(--color-text-primary);
+  background: var(--card-background);
+  text-align: center;
+}
+
+.priceField:focus {
+  outline: none;
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 2px rgba(238, 130, 238, 0.2);
+}
+
+.priceInput span {
+  color: var(--color-text-secondary);
+  font-size: var(--fs-100);
+  font-weight: var(--font-weight-medium);
+}
+
+.multiplySymbol {
+  color: var(--color-text-secondary);
+  font-size: var(--fs-200);
+  font-weight: var(--font-weight-bold);
+  margin: 0 var(--spacing-xs);
+}
+
+.quantityControls .quantityBtn {
+  width: 24px;
+  height: 24px;
+}
+
+.quantityControls .quantityInput {
+  width: 40px;
+  font-size: var(--fs-100);
+  text-align: center;
+  padding: var(--spacing-xs);
+}
+
+.depositTotal {
+  color: var(--color-success, #10b981);
+  font-size: var(--fs-200);
+  font-weight: var(--font-weight-bold);
+  margin-left: var(--spacing-sm);
+  white-space: nowrap;
+  min-width: 80px;
+  text-align: left;
+}
+
+.sectionTitle {
+  color: var(--color-text-primary);
+  font-size: var(--fs-200);
+  font-weight: var(--font-weight-semibold);
+  margin: 0 0 var(--spacing-md) 0;
+}
+
+.depositReturnControls {
+  display: flex;
+  gap: var(--spacing-lg);
+  align-items: flex-end;
+}
+
+.priceInput,
+.countInput {
+  flex: 1;
+}
+
+.priceInput label,
+.countInput label {
+  display: block;
+  color: var(--color-text-secondary);
+  font-size: var(--fs-100);
+  margin-bottom: var(--spacing-sm);
+}
+
+.priceInput .amountInput {
+  margin-bottom: 0;
+  max-width: 120px;
+}
+
+.countInput .quantityControls {
+  margin: 0;
+  max-width: 140px;
 }
 
 .actions {
@@ -283,7 +552,8 @@
 }
 
 .cancelBtn,
-.saveBtn {
+.saveBtn,
+.checkoutBtn {
   flex: 1;
   padding: var(--spacing-md) var(--spacing-lg);
   border-radius: var(--radius-lg);
@@ -321,6 +591,25 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
+.checkoutBtn {
+  background: var(--color-success, #10b981);
+  color: white;
+  border: none;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+}
+
+.checkoutBtn:hover:not(:disabled) {
+  background: var(--color-success-hover, #059669);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+}
+
+.checkoutBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
 /* === RESPONSIVE === */
 @media (max-width: 768px) {
   .overlay {
@@ -339,33 +628,146 @@
     padding: var(--spacing-md);
   }
   
+  .itemRow {
+    flex-wrap: wrap;
+    gap: var(--spacing-sm);
+  }
+  
   .itemInfo {
-    flex-direction: column;
-    gap: var(--spacing-md);
+    flex-basis: 100%;
+    margin-bottom: var(--spacing-sm);
+  }
+  
+  .itemName {
+    max-width: 150px;
+  }
+  
+  .quantityControls {
+    flex-shrink: 0;
   }
   
   .priceInfo {
     align-items: flex-start;
-  }
-  
-  .controls {
-    flex-direction: column;
-    align-items: stretch;
-    gap: var(--spacing-md);
+    min-width: 70px;
   }
   
   .actions {
     flex-direction: column;
   }
+  
+  .checkoutOptions {
+    padding: var(--spacing-sm);
+  }
+  
+  .depositReturnSection {
+    padding: 0;
+  }
+  
+  .changeCalculatorSection {
+    padding: 0;
+  }
+
+  .gridRow {
+    flex-wrap: wrap;
+    gap: var(--spacing-xs);
+  }
+
+  .gridLabel {
+    flex-basis: 100%;
+    margin-bottom: var(--spacing-xs);
+  }
+
+  .gridValue {
+    flex-basis: 100%;
+    text-align: left;
+  }
+
+  .changeField {
+    width: 70px;
+  }
+  
+  .priceField {
+    width: 50px;
+  }
+  
+  .countingInput {
+    width: 35px;
+  }
+
+  .amountInput {
+    justify-content: flex-start;
+  }
+
+  .amountInput input {
+    max-width: none;
+  }
 }
 
 @media (max-width: 480px) {
-  .quantityControls {
-    flex: 1;
-    justify-content: center;
+  .itemRow {
+    flex-direction: column;
+    align-items: stretch;
   }
   
-  .quantityInput {
-    width: 80px;
+  .itemInfo {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-xs);
   }
+  
+  .countingControls {
+    align-self: center;
+  }
+  
+  .countingInput {
+    width: 60px;
+  }
+  
+  .priceInfo {
+    align-items: center;
+    text-align: center;
+  }
+}
+
+/* Spacers und Utilities */
+.large {
+  font-size: 1.1em;
+  font-weight: bold;
+}
+
+.bordered {
+  border-top: 1px solid #e0e0e0;
+  padding-top: 8px;
+  margin-top: 8px;
+}
+
+.success {
+  color: #4caf50;
+  font-weight: bold;
+}
+
+.positive {
+  color: #4caf50;
+  font-weight: bold;
+}
+
+.negative {
+  color: #f44336;
+  font-weight: bold;
+}
+
+/* Spezielle Styling für Rückgeldrechner */
+.amountInput {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.changeField {
+  width: 80px;
+  padding: 6px 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 0.9em;
+  text-align: right;
 }

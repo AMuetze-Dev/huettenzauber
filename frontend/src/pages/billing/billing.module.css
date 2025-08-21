@@ -1,4 +1,4 @@
-/* Customer Display Page Styles - 7-Zoll Display optimiert */
+/* Customer Display Page Styles - Optimized for customer viewing */
 
 /* === CUSTOMER DISPLAY LAYOUT === */
 .customerDisplay {
@@ -9,7 +9,7 @@
   display: flex;
   flex-direction: column;
   font-family: var(--ff-base);
-  font-size: 14px; /* Basis-Schriftgröße für 7-Zoll */
+  font-size: 16px;
   box-sizing: border-box;
   overflow-x: hidden;
 }
@@ -18,12 +18,12 @@
 .displayHeader {
   background: var(--color-white);
   border-bottom: 2px solid var(--color-accent);
-  padding: var(--spacing-md) var(--spacing-lg);
+  padding: var(--spacing-lg) var(--spacing-xl);
   display: flex;
   justify-content: space-between;
   align-items: center;
   box-shadow: var(--shadow-md);
-  min-height: 60px;
+  min-height: 80px;
 }
 
 .logoArea {
@@ -34,7 +34,7 @@
 }
 
 .logoArea h1 {
-  font-size: 1.8rem;
+  font-size: 2.2rem;
   font-weight: var(--font-weight-bold);
   margin: 0;
   color: var(--color-text-primary);
@@ -47,14 +47,14 @@
 
 .statusLabel {
   display: block;
-  font-size: 0.9rem;
+  font-size: 1rem;
   color: var(--color-text-secondary);
-  margin-bottom: 2px;
+  margin-bottom: 4px;
 }
 
 .itemCount {
   display: block;
-  font-size: 1.4rem;
+  font-size: 1.6rem;
   font-weight: var(--font-weight-bold);
   color: var(--color-accent);
 }
@@ -62,7 +62,7 @@
 /* === DISPLAY CONTENT === */
 .displayContent {
   flex: 1;
-  padding: var(--spacing-md) var(--spacing-md);
+  padding: var(--spacing-xl);
   max-width: 100%;
   margin: 0 auto;
   overflow-y: auto;
@@ -79,20 +79,22 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 50vh;
+  height: 60vh;
   color: var(--color-text-secondary);
   text-align: center;
 }
 
 .emptyDisplay h2 {
-  font-size: 1.6rem;
-  margin: var(--spacing-md) 0 var(--spacing-sm) 0;
+  font-size: 2rem;
+  margin: var(--spacing-lg) 0 var(--spacing-md) 0;
   color: var(--color-text-primary);
 }
 
 .emptyDisplay p {
-  font-size: 1.1rem;
+  font-size: 1.2rem;
   color: var(--color-text-secondary);
+  max-width: 500px;
+  line-height: 1.5;
 }
 
 /* === ITEMS DISPLAY === */
@@ -101,13 +103,13 @@
   display: flex;
   flex-direction: column;
   min-height: 0;
-  margin-bottom: var(--spacing-lg);
+  margin-bottom: var(--spacing-xl);
   width: 100%;
 }
 
 .itemsDisplay h2 {
-  font-size: 1.4rem;
-  margin-bottom: var(--spacing-md);
+  font-size: 1.8rem;
+  margin-bottom: var(--spacing-lg);
   color: var(--color-text-primary);
   text-align: center;
   font-weight: var(--font-weight-semibold);
@@ -117,31 +119,31 @@
 .itemsList {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-sm);
+  gap: var(--spacing-md);
   flex: 1;
   overflow-y: auto;
-  max-height: calc(100vh - 300px); /* Reserviert Platz für Header, Total und Footer */
+  max-height: calc(100vh - 350px);
   width: 100%;
   box-sizing: border-box;
 }
 
 .displayItem {
   background: var(--color-white);
-  padding: var(--spacing-md) var(--spacing-lg);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-sm);
+  padding: var(--spacing-lg) var(--spacing-xl);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
   border: 1px solid var(--color-border);
   display: grid;
-  grid-template-columns: 1fr 80px 100px;
+  grid-template-columns: 2fr 100px 120px;
   gap: var(--spacing-lg);
   align-items: center;
-  min-height: 60px;
+  min-height: 70px;
   width: 100%;
   box-sizing: border-box;
 }
 
 .itemName {
-  font-size: 1.2rem;
+  font-size: 1.3rem;
   font-weight: var(--font-weight-medium);
   color: var(--color-text-primary);
   text-align: left;
@@ -149,25 +151,253 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  min-width: 0; /* Wichtig für text-overflow */
+  min-width: 0;
 }
 
 .itemQuantity {
-  font-size: 1.1rem;
+  font-size: 1.2rem;
   font-weight: var(--font-weight-semibold);
   color: var(--color-text-secondary);
   text-align: center;
-  width: 80px;
+  width: 100px;
   flex-shrink: 0;
 }
 
 .itemPrice {
-  font-size: 1.2rem;
+  font-size: 1.3rem;
   font-weight: var(--font-weight-bold);
   color: var(--color-text-primary);
   text-align: right;
-  width: 100px;
+  width: 120px;
   flex-shrink: 0;
+}
+
+/* === TOTAL DISPLAY === */
+.totalDisplay {
+  background: var(--color-white);
+  padding: var(--spacing-xl);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  border: 2px solid var(--color-accent);
+  margin: var(--spacing-lg) 0;
+  flex-shrink: 0;
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
+}
+
+.subtotal,
+.totalRow {
+  display: flex;
+  justify-content: space-between;
+  padding: var(--spacing-sm) 0;
+  border-bottom: 1px solid var(--color-border);
+  font-size: 1.1rem;
+  color: var(--color-text-secondary);
+}
+
+.grandTotal {
+  display: flex;
+  justify-content: space-between;
+  padding: var(--spacing-lg) 0;
+  font-size: 1.8rem;
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-primary);
+}
+
+.grandTotal span:last-child {
+  color: var(--color-accent);
+  font-size: 2rem;
+}
+
+/* === DISPLAY FOOTER === */
+.displayFooter {
+  background: var(--color-white);
+  border-top: 1px solid var(--color-border);
+  padding: var(--spacing-md) var(--spacing-xl);
+  text-align: center;
+  color: var(--color-text-secondary);
+  box-shadow: var(--shadow-sm);
+  min-height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.displayFooter p {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: var(--font-weight-medium);
+}
+
+/* === RESPONSIVE === */
+@media (max-width: 768px) {
+  .billingHeader {
+    padding: var(--spacing-md);
+    flex-direction: column;
+    gap: var(--spacing-md);
+    text-align: center;
+  }
+  
+  .billingContent {
+    padding: var(--spacing-md);
+  }
+  
+  .billHeader {
+    flex-direction: column;
+    gap: var(--spacing-md);
+    text-align: center;
+  }
+  
+  .itemsGrid,
+  .billItem {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-sm);
+    text-align: left;
+  }
+  
+  .itemQuantity,
+  .itemPrice,
+  .itemDeposit {
+    text-align: left;
+  }
+}
+
+@media (max-width: 480px) {
+  .headerContent h1 {
+    font-size: 1.5rem;
+  }
+  
+  .billCard {
+    margin: 0 -var(--spacing-sm);
+    border-radius: 0;
+  }
+}
+
+/* === BILLS LIST === */
+.billsList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.billCard {
+  background: var(--color-white);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--color-border);
+  overflow: hidden;
+  transition: all 0.2s ease;
+}
+
+.billCard:hover {
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-2px);
+}
+
+.billHeader {
+  background: var(--color-gray-50);
+  padding: var(--spacing-lg);
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.billInfo h3 {
+  margin: 0 0 var(--spacing-xs) 0;
+  color: var(--color-text-primary);
+  font-size: 1.2rem;
+  font-weight: var(--font-weight-semibold);
+}
+
+.billDate {
+  color: var(--color-text-secondary);
+  font-size: 0.9rem;
+}
+
+.billTotals {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--spacing-xs);
+}
+
+.totalAmount {
+  font-size: 1.3rem;
+  font-weight: var(--font-weight-bold);
+  color: var(--color-accent);
+}
+
+.depositAmount {
+  font-size: 0.9rem;
+  color: var(--color-text-secondary);
+}
+
+.billActions {
+  display: flex;
+  gap: var(--spacing-sm);
+}
+
+.deleteButton {
+  background: transparent;
+  border: 1px solid #f44336;
+  color: #f44336;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.9rem;
+}
+
+.deleteButton:hover {
+  background: rgba(244, 67, 54, 0.1);
+}
+
+/* === BILL ITEMS === */
+.billItems {
+  padding: var(--spacing-lg);
+}
+
+.itemsGrid {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-md);
+  padding-bottom: var(--spacing-sm);
+  border-bottom: 1px solid var(--color-border);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-secondary);
+  font-size: 0.9rem;
+}
+
+.billItem {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  gap: var(--spacing-md);
+  padding: var(--spacing-sm) 0;
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+.billItem:last-child {
+  border-bottom: none;
+}
+
+.itemName {
+  color: var(--color-text-primary);
+  font-weight: var(--font-weight-medium);
+}
+
+.itemQuantity,
+.itemPrice,
+.itemDeposit {
+  color: var(--color-text-secondary);
+  text-align: right;
+}
+
+.itemPrice {
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
 }
 
 /* === TOTAL DISPLAY === */

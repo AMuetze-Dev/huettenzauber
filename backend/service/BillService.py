@@ -20,16 +20,8 @@ def create(db: Session, bill_date: date, items: list[dict]):
     if not items or not isinstance(items, list): 
         raise HTTPException(status_code=400, detail="Items müssen eine Liste sein und dürfen nicht leer sein")
     
-    # Berechne Gesamtbeträge
-    total_amount = 0.0
-    total_deposit_amount = 0.0
-    
     # Erstelle Bill
-    bill = Bill(
-        date=bill_date,
-        total_amount=0.0,  # Wird nachher gesetzt
-        total_deposit_amount=0.0  # Wird nachher gesetzt
-    )
+    bill = Bill(date=bill_date)
     db.add(bill)
     
     try:
@@ -41,34 +33,17 @@ def create(db: Session, bill_date: date, items: list[dict]):
             if not variant: 
                 raise HTTPException(status_code=404, detail=f"ItemVariant {item['item_variant_id']} nicht gefunden")
             
-            # Hole StockItem für Pfand-Information
-            stock_item = db.query(StockItem).filter(StockItem.id == variant.stock_item_id).first()
-            if not stock_item:
-                raise HTTPException(status_code=404, detail=f"StockItem für Variant {item['item_variant_id']} nicht gefunden")
-            
             quantity = item.get("item_quantity", 1)
             if quantity <= 0: 
                 raise HTTPException(status_code=400, detail="Item quantity must be greater than 0")
-            
-            # Berechne Beträge für diesen Artikel
-            item_total = variant.price * quantity
-            deposit_total = stock_item.deposit_amount * quantity
-            
-            total_amount += item_total
-            total_deposit_amount += deposit_total
             
             bill_item = BillItem(
                 bill_id=bill.id,
                 item_variant_id=item["item_variant_id"],
                 item_quantity=quantity,
-                item_price=variant.price,
-                deposit_amount_per_item=stock_item.deposit_amount
+                item_price=variant.price
             )
             db.add(bill_item)
-        
-        # Aktualisiere Bill mit Gesamtbeträgen
-        bill.total_amount = total_amount
-        bill.total_deposit_amount = total_deposit_amount
         
         db.commit()
         db.refresh(bill)

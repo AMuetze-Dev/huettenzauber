@@ -11,7 +11,6 @@ import { usePersistentCart } from "../../context/PersistentCartContext";
 import { ThemeContext } from "../../App";
 import * as MdIcons from "react-icons/md";
 import CartModal from "../../components/modals/CartModal.component";
-import CheckoutModal from "../../components/modals/CheckoutModal.component";
 import styles from "./order.module.css";
 
 // === TYPES ===
@@ -128,7 +127,6 @@ const OrderContent: React.FC<OrderContentProps> = ({
     null
   );
   const [isCartModalOpen, setIsCartModalOpen] = useState(false);
-  const [isCheckoutModalOpen, setIsCheckoutModalOpen] = useState(false);
 
   // Use prop categoryId if provided, otherwise use internal state
   const selectedCategoryId = propCategoryId ?? internalCategoryId;
@@ -195,7 +193,8 @@ const OrderContent: React.FC<OrderContentProps> = ({
     // 2. Generate receipt
     // 3. Clear cart (already done in modal)
 
-    setIsCheckoutModalOpen(false);
+    setIsCartModalOpen(false);
+    navigate("/billing");
   };
 
   const formatPrice = (price: number) => {
@@ -286,25 +285,15 @@ const OrderContent: React.FC<OrderContentProps> = ({
                 )}
               </span>
             </div>
-            <button
-              className={styles.checkoutBtn}
-              onClick={(e) => {
-                e.stopPropagation();
-                setIsCheckoutModalOpen(true);
-              }}
-            >
-              <MdIcons.MdShoppingCartCheckout size={20} />
-              Zur Kasse
-            </button>
           </button>
         </div>
       )}
 
-      {/* Checkout Modal */}
-      <CheckoutModal
-        isOpen={isCheckoutModalOpen}
-        onClose={() => setIsCheckoutModalOpen(false)}
-        onConfirm={handleCheckout}
+      {/* Cart Modal */}
+      <CartModal
+        isOpen={isCartModalOpen}
+        onClose={() => setIsCartModalOpen(false)}
+        onCheckoutComplete={handleCheckout}
       />
     </div>
   );

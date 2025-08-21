@@ -53,8 +53,6 @@ class Bill(Base):
     __tablename__ = 'bill'
     id = Column(Integer, primary_key=True, autoincrement=True)
     date = Column(Date)
-    total_amount = Column(Float, nullable=False, default=0.0)
-    total_deposit_amount = Column(Float, nullable=False, default=0.0)
     is_deleted = Column(Boolean, default=False, nullable=False)
 
     items = relationship("BillItem", back_populates="bill")
@@ -67,7 +65,6 @@ class BillItem(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     item_quantity = Column(Float)
     item_price = Column(Float, nullable=False)  # Preis zum Zeitpunkt der Bestellung
-    deposit_amount_per_item = Column(Float, nullable=False, default=0.0)  # Pfand pro Artikel
 
     bill = relationship("Bill", back_populates="items")
 
