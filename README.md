@@ -15,12 +15,14 @@ Ein modernes Point-of-Sale (POS) System für Restaurants und Gastronomie mit int
 ## 🏗️ Architektur
 
 ### Frontend (React/TypeScript)
+
 - **React 18** mit TypeScript
 - **Context API** für State Management
 - **CSS Modules** für Component-Styling
 - **React Icons** für konsistente Iconographie
 
 ### Backend (Python/FastAPI)
+
 - **FastAPI** für REST API
 - **SQLAlchemy** für Datenbankzugriff
 - **SQLite** als Datenbank
@@ -29,11 +31,13 @@ Ein modernes Point-of-Sale (POS) System für Restaurants und Gastronomie mit int
 ## 📦 Installation
 
 ### Voraussetzungen
+
 - Node.js 18+
 - Python 3.9+
 - Git
 
 ### Frontend Setup
+
 ```bash
 cd frontend
 npm install
@@ -41,6 +45,7 @@ npm start
 ```
 
 ### Backend Setup
+
 ```bash
 cd backend
 python -m venv .venv
@@ -53,11 +58,13 @@ uvicorn app:app --reload
 ## 🐳 Docker Setup
 
 ### Gesamtes System starten
+
 ```bash
 docker-compose up -d
 ```
 
 ### Einzelne Services
+
 ```bash
 # Backend
 .\compose-backend.ps1
@@ -69,6 +76,7 @@ docker-compose up -d
 ## 🛠️ Entwicklung
 
 ### Projektstruktur
+
 ```
 huettenzauber/
 ├── backend/                 # FastAPI Backend
@@ -86,6 +94,7 @@ huettenzauber/
 ```
 
 ### Wichtige Endpoints
+
 - **Frontend**: http://localhost:3000
 - **Backend API**: http://localhost:8000
 - **API Docs**: http://localhost:8000/docs
@@ -93,6 +102,7 @@ huettenzauber/
 ## 💰 Pfandsystem
 
 Das integrierte Pfandsystem ermöglicht:
+
 - Automatische Pfandberechnung bei Bestellungen
 - Pfandrückgabe im Checkout-Prozess
 - Transparente Aufschlüsselung in allen Anzeigen
@@ -101,12 +111,14 @@ Das integrierte Pfandsystem ermöglicht:
 ## 🧪 Testing
 
 ### Backend Tests
+
 ```bash
 cd backend
 python -m pytest
 ```
 
 ### Frontend Tests
+
 ```bash
 cd frontend
 npm test
@@ -115,6 +127,7 @@ npm test
 ## 📝 API Dokumentation
 
 Die vollständige API-Dokumentation ist verfügbar unter:
+
 - **Swagger UI**: http://localhost:8000/docs
 - **ReDoc**: http://localhost:8000/redoc
 
