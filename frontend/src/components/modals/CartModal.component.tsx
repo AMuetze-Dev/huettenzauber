@@ -20,9 +20,6 @@ const CartModal: React.FC<CartModalProps> = ({
 }) => {
   const cart = usePersistentCart();
   const billContext = useBill();
-  const [localQuantities, setLocalQuantities] = useState<
-    Record<string, number>
-  >({});
   const [receivedAmount, setReceivedAmount] = useState<string>("");
 
   // Automatisierte Pfandrückgabe
@@ -38,16 +35,16 @@ const CartModal: React.FC<CartModalProps> = ({
     localStorage.setItem("depositReturnPrice", depositReturnPrice);
   }, [depositReturnPrice]);
 
-  // Initialize local quantities when modal opens
+  // Update Pfandrückgabe im Cart-Context
   React.useEffect(() => {
-    if (isOpen) {
-      const quantities: Record<string, number> = {};
-      cart.state.items.forEach((item: CartItem) => {
-        quantities[item.id] = item.quantity;
-      });
-      setLocalQuantities(quantities);
+    const pricePerItem = parseFloat(depositReturnPrice) || 0;
+    if (pricePerItem > 0 && depositReturnCount > 0) {
+      cart.setDepositReturn(pricePerItem, depositReturnCount);
+    } else if (depositReturnCount === 0 || pricePerItem === 0) {
+      // Nur setzen wenn tatsächlich etwas zu löschen ist
+      cart.setDepositReturn(0, 0);
     }
-  }, [isOpen, cart.state.items]);
+  }, [depositReturnPrice, depositReturnCount]); // Entferne 'cart' aus den Dependencies
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat("de-DE", {
@@ -57,41 +54,36 @@ const CartModal: React.FC<CartModalProps> = ({
   };
 
   const handleQuantityChange = (itemId: string, newQuantity: number) => {
-    setLocalQuantities((prev) => ({
-      ...prev,
-      [itemId]: Math.max(0, newQuantity),
-    }));
-  };
-
-  const handleSave = () => {
-    // Update cart with new quantities
-    cart.state.items.forEach((item: CartItem) => {
-      const newQuantity = localQuantities[item.id] ?? item.quantity;
-
-      if (newQuantity === 0) {
-        // Remove item if quantity is 0
-        cart.removeItem(item.id);
-      } else if (newQuantity !== item.quantity) {
-        // Update quantity if changed
-        cart.updateQuantity(item.id, newQuantity);
-      }
-    });
-
-    onClose();
+    // Live-Update: Direkt im Cart, aber Artikel mit 0 werden nicht entfernt
+    const quantity = Math.max(0, newQuantity);
+    if (quantity === 0) {
+      // Setze auf 0, aber entferne nicht
+      cart.updateQuantity(itemId, 0);
+    } else {
+      cart.updateQuantity(itemId, quantity);
+    }
   };
 
   const handleRemoveItem = (itemId: string) => {
-    setLocalQuantities((prev) => ({
-      ...prev,
-      [itemId]: 0,
-    }));
+    // Sofort entfernen bei explizitem Löschen
+    cart.removeItem(itemId);
+  };
+
+  const cleanupZeroQuantityItems = () => {
+    // Entferne alle Artikel mit Anzahl 0 beim Schließen/Abschließen
+    cart.cleanupZeroQuantity();
   };
 
   const calculateTotalWithChanges = () => {
     return cart.state.items.reduce((total: number, item: CartItem) => {
-      const quantity = localQuantities[item.id] ?? item.quantity;
-      return total + item.price * quantity;
+      return total + item.price * item.quantity;
     }, 0);
+  };
+
+  const handleClose = () => {
+    // Cleanup: Entferne Artikel mit Anzahl 0 beim Schließen
+    cleanupZeroQuantityItems();
+    onClose();
   };
 
   const calculateChange = (): number => {
@@ -122,14 +114,16 @@ const CartModal: React.FC<CartModalProps> = ({
 
     setIsProcessing(true);
     try {
-      // Erst die Warenkorb-Änderungen speichern
-      handleSave();
+      // Cleanup: Entferne Artikel mit Anzahl 0 vor dem Checkout
+      cleanupZeroQuantityItems();
 
       // Erstelle Bill im Backend
-      const billItems = cart.state.items.map((item) => ({
-        item_variant_id: item.variantId,
-        item_quantity: localQuantities[item.id] ?? item.quantity,
-      }));
+      const billItems = cart.state.items
+        .filter((item) => item.quantity > 0) // Nur Artikel mit Anzahl > 0
+        .map((item) => ({
+          item_variant_id: item.variantId,
+          item_quantity: item.quantity,
+        }));
 
       await billContext.addBill({
         date: new Date().toISOString().split("T")[0], // YYYY-MM-DD format
@@ -164,7 +158,7 @@ const CartModal: React.FC<CartModalProps> = ({
           </h2>
           <button
             className={styles.closeBtn}
-            onClick={onClose}
+            onClick={handleClose}
             aria-label="Modal schließen"
           >
             <MdIcons.MdClose size={24} />
@@ -184,8 +178,7 @@ const CartModal: React.FC<CartModalProps> = ({
           ) : (
             <div className={styles.cartItems}>
               {cart.state.items.map((item: CartItem) => {
-                const currentQuantity =
-                  localQuantities[item.id] ?? item.quantity;
+                const currentQuantity = item.quantity;
                 const isMarkedForRemoval = currentQuantity === 0;
 
                 return (
@@ -377,10 +370,6 @@ const CartModal: React.FC<CartModalProps> = ({
             </div>
 
             <div className={styles.actions}>
-              <button onClick={handleSave} className={styles.saveBtn}>
-                <MdIcons.MdSave size={20} />
-                Aktualisieren
-              </button>
               <button
                 onClick={handleConfirmOrder}
                 className={styles.checkoutBtn}

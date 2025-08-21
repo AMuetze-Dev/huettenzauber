@@ -83,20 +83,30 @@ const BillingPage: React.FC = () => {
                   <span>{formatCurrency(state.totalDepositAmount)}</span>
                 </div>
               )}
+              {state.depositReturn && state.depositReturn.totalReturn > 0 && (
+                <div className={styles.totalRow} style={{ color: "#4caf50" }}>
+                  <span>
+                    Pfandrückgabe ({state.depositReturn.quantity} Stück):
+                  </span>
+                  <span>
+                    - {formatCurrency(state.depositReturn.totalReturn)}
+                  </span>
+                </div>
+              )}
               <div className={styles.grandTotal}>
                 <span>Gesamtsumme:</span>
                 <span>
-                  {formatCurrency(state.totalAmount + state.totalDepositAmount)}
+                  {formatCurrency(
+                    state.totalAmount +
+                      state.totalDepositAmount -
+                      (state.depositReturn?.totalReturn || 0)
+                  )}
                 </span>
               </div>
             </div>
           </>
         )}
       </main>
-
-      <footer className={styles.displayFooter}>
-        <p>Vielen Dank für Ihren Besuch!</p>
-      </footer>
     </div>
   );
 };

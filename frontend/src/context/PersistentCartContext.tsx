@@ -25,6 +25,11 @@ export interface CartState {
   totalAmount: number;
   totalItems: number;
   totalDepositAmount: number; // Gesamter Pfandbetrag
+  depositReturn?: {
+    pricePerItem: number;
+    quantity: number;
+    totalReturn: number;
+  };
 }
 
 // === ACTIONS ===
@@ -35,17 +40,30 @@ type CartAction =
   | { type: "INCREASE_QUANTITY"; payload: { id: string } }
   | { type: "DECREASE_QUANTITY"; payload: { id: string } }
   | { type: "CLEAR_CART" }
+  | { type: "CLEANUP_ZERO_QUANTITY" }
+  | {
+      type: "SET_DEPOSIT_RETURN";
+      payload: { pricePerItem: number; quantity: number };
+    }
   | { type: "LOAD_FROM_STORAGE"; payload: CartState };
 
 // === HELPER FUNCTIONS ===
-const calculateTotals = (items: CartItem[]) => ({
-  totalAmount: items.reduce((sum, item) => sum + item.price * item.quantity, 0),
-  totalItems: items.reduce((sum, item) => sum + item.quantity, 0),
-  totalDepositAmount: items.reduce(
-    (sum, item) => sum + (item.depositAmount || 0) * item.quantity,
-    0
-  ),
-});
+const calculateTotals = (items: CartItem[]) => {
+  // Nur Artikel mit Anzahl > 0 für die Anzeige berücksichtigen
+  const visibleItems = items.filter((item) => item.quantity > 0);
+
+  return {
+    totalAmount: visibleItems.reduce(
+      (sum, item) => sum + item.price * item.quantity,
+      0
+    ),
+    totalItems: visibleItems.reduce((sum, item) => sum + item.quantity, 0),
+    totalDepositAmount: visibleItems.reduce(
+      (sum, item) => sum + (item.depositAmount || 0) * item.quantity,
+      0
+    ),
+  };
+};
 
 // === REDUCER ===
 const cartReducer = (state: CartState, action: CartAction): CartState => {
@@ -79,6 +97,7 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
       newState = {
         items: newItems,
         ...totals,
+        depositReturn: state.depositReturn,
       };
       break;
     }
@@ -91,12 +110,14 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
       newState = {
         items: newItems,
         ...totals,
+        depositReturn: state.depositReturn,
       };
       break;
     }
 
     case "UPDATE_QUANTITY": {
-      if (action.payload.quantity <= 0) {
+      // Erlaube Anzahl 0, entferne nur bei negativen Werten
+      if (action.payload.quantity < 0) {
         return cartReducer(state, {
           type: "REMOVE_ITEM",
           payload: { id: action.payload.id },
@@ -113,6 +134,7 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
       newState = {
         items: newItems,
         ...totals,
+        depositReturn: state.depositReturn,
       };
       break;
     }
@@ -128,6 +150,7 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
       newState = {
         items: newItems,
         ...totals,
+        depositReturn: state.depositReturn,
       };
       break;
     }
@@ -151,6 +174,7 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
       newState = {
         items: newItems,
         ...totals,
+        depositReturn: state.depositReturn,
       };
       break;
     }
@@ -161,18 +185,58 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
         totalAmount: 0,
         totalItems: 0,
         totalDepositAmount: 0,
+        depositReturn: undefined,
       };
       break;
+
+    case "CLEANUP_ZERO_QUANTITY": {
+      const newItems = state.items.filter((item) => item.quantity > 0);
+      const totals = calculateTotals(newItems);
+      newState = {
+        items: newItems,
+        ...totals,
+        depositReturn: state.depositReturn,
+      };
+      break;
+    }
+
+    case "SET_DEPOSIT_RETURN": {
+      const totalReturn = action.payload.pricePerItem * action.payload.quantity;
+
+      // Prüfe ob sich tatsächlich etwas geändert hat
+      const currentDepositReturn = state.depositReturn;
+      if (
+        currentDepositReturn &&
+        currentDepositReturn.pricePerItem === action.payload.pricePerItem &&
+        currentDepositReturn.quantity === action.payload.quantity &&
+        currentDepositReturn.totalReturn === totalReturn
+      ) {
+        // Keine Änderung, gib aktuellen State zurück
+        return state;
+      }
+
+      newState = {
+        ...state,
+        depositReturn: {
+          pricePerItem: action.payload.pricePerItem,
+          quantity: action.payload.quantity,
+          totalReturn,
+        },
+      };
+      break;
+    }
 
     default:
       return state;
   }
 
-  // Speichere in localStorage nach jeder Änderung
-  localStorage.setItem("huettenzauber_cart", JSON.stringify(newState));
+  // Speichere in localStorage nach jeder Änderung (nur wenn sich etwas geändert hat)
+  if (newState !== state) {
+    localStorage.setItem("huettenzauber_cart", JSON.stringify(newState));
 
-  // Trigger custom event für Cross-Window-Synchronisation
-  window.dispatchEvent(new CustomEvent("cartUpdated", { detail: newState }));
+    // Trigger custom event für Cross-Window-Synchronisation
+    window.dispatchEvent(new CustomEvent("cartUpdated", { detail: newState }));
+  }
 
   return newState;
 };
@@ -186,6 +250,8 @@ interface CartContextType {
   increaseQuantity: (id: string) => void;
   decreaseQuantity: (id: string) => void;
   clearCart: () => void;
+  cleanupZeroQuantity: () => void;
+  setDepositReturn: (pricePerItem: number, quantity: number) => void;
   getItemQuantity: (stockItemId: number, variantId: number) => number;
 }
 
@@ -203,6 +269,7 @@ const getInitialState = (): CartState => {
         totalAmount: parsed.totalAmount || 0,
         totalItems: parsed.totalItems || 0,
         totalDepositAmount: parsed.totalDepositAmount || 0,
+        depositReturn: parsed.depositReturn || undefined,
       };
     }
   } catch (error) {
@@ -214,6 +281,7 @@ const getInitialState = (): CartState => {
     totalAmount: 0,
     totalItems: 0,
     totalDepositAmount: 0,
+    depositReturn: undefined,
   };
 };
 
@@ -286,6 +354,20 @@ export const PersistentCartProvider: React.FC<CartProviderProps> = ({
     dispatch({ type: "CLEAR_CART" });
   }, []);
 
+  const cleanupZeroQuantity = useCallback(() => {
+    dispatch({ type: "CLEANUP_ZERO_QUANTITY" });
+  }, []);
+
+  const setDepositReturn = useCallback(
+    (pricePerItem: number, quantity: number) => {
+      dispatch({
+        type: "SET_DEPOSIT_RETURN",
+        payload: { pricePerItem, quantity },
+      });
+    },
+    []
+  );
+
   const getItemQuantity = useCallback(
     (stockItemId: number, variantId: number): number => {
       const id = `${stockItemId}-${variantId}`;
@@ -303,6 +385,8 @@ export const PersistentCartProvider: React.FC<CartProviderProps> = ({
     increaseQuantity,
     decreaseQuantity,
     clearCart,
+    cleanupZeroQuantity,
+    setDepositReturn,
     getItemQuantity,
   };
 
