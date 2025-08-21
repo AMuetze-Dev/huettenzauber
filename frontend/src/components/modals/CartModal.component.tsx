@@ -216,18 +216,9 @@ const CartModal: React.FC<CartModalProps> = ({
                           <MdIcons.MdRemove size={14} />
                         </button>
 
-                        <input
-                          type="number"
-                          min="0"
-                          value={currentQuantity}
-                          onChange={(e) =>
-                            handleQuantityChange(
-                              item.id,
-                              parseInt(e.target.value) || 0
-                            )
-                          }
-                          className={styles.countingInput}
-                        />
+                        <span className={styles.countingDisplay}>
+                          {currentQuantity}
+                        </span>
 
                         <button
                           onClick={() =>
@@ -302,17 +293,9 @@ const CartModal: React.FC<CartModalProps> = ({
                     <MdIcons.MdRemove size={14} />
                   </button>
 
-                  <input
-                    type="number"
-                    min="0"
-                    value={depositReturnCount}
-                    onChange={(e) =>
-                      setDepositReturnCount(
-                        Math.max(0, parseInt(e.target.value) || 0)
-                      )
-                    }
-                    className={styles.countingInput}
-                  />
+                  <span className={styles.countingDisplay}>
+                    {depositReturnCount}
+                  </span>
 
                   <button
                     onClick={() =>
@@ -325,7 +308,7 @@ const CartModal: React.FC<CartModalProps> = ({
                 </div>
 
                 <span className={styles.gridValue + " " + styles.success}>
-                  = {formatPrice(getTotalDepositReturn())}
+                  {formatPrice(getTotalDepositReturn())}
                 </span>
               </div>
             </div>
@@ -363,7 +346,8 @@ const CartModal: React.FC<CartModalProps> = ({
             {/* Rückgeldrechner */}
             <div className={styles.changeCalculatorSection}>
               <div className={styles.gridRow}>
-                <span className={styles.gridLabel}>Erhalten:</span>
+                <span className={styles.gridLabel}>Rückgeldrechner:</span>
+
                 <div className={styles.gridValue}>
                   <div className={styles.amountInput}>
                     <input
@@ -378,9 +362,7 @@ const CartModal: React.FC<CartModalProps> = ({
                     <span>€</span>
                   </div>
                 </div>
-              </div>
-              <div className={styles.gridRow}>
-                <span className={styles.gridLabel}>Rückgeld:</span>
+
                 <span className={styles.gridValue + " " + styles.large}>
                   <span
                     className={

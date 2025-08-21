@@ -278,6 +278,15 @@
   background: var(--color-gray-50);
   border-radius: var(--radius-sm);
 }
+
+.countingDisplay {
+  width: 40px;
+  text-align: center;
+  color: var(--color-text-primary);
+  font-size: var(--fs-100);
+  font-weight: var(--font-weight-medium);
+  padding: var(--spacing-xs);
+}
 .footer {
   border-top: 1px solid var(--color-border);
   padding: var(--spacing-lg);
@@ -682,6 +691,22 @@
     text-align: left;
   }
 
+  /* Rückgeldrechner responsive Anpassungen */
+  .changeCalculatorSection .gridRow {
+    flex-wrap: wrap;
+  }
+  
+  .changeCalculatorSection .gridLabel {
+    flex-basis: 100%;
+    min-width: auto;
+    margin-bottom: var(--spacing-xs);
+  }
+  
+  .changeCalculatorSection .gridValue {
+    flex-basis: 100%;
+    justify-content: space-between;
+  }
+
   .changeField {
     width: 70px;
   }
@@ -770,4 +795,26 @@
   border-radius: 4px;
   font-size: 0.9em;
   text-align: right;
+}
+
+/* Spezielle Regeln für Rückgeldrechner auf einer Zeile */
+.changeCalculatorSection .gridRow {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  flex-wrap: nowrap;
+}
+
+.changeCalculatorSection .gridLabel {
+  flex-shrink: 0;
+  min-width: 120px;
+}
+
+.changeCalculatorSection .gridValue {
+  display: flex;
+  align-items: center;
+}
+
+.changeCalculatorSection .amountInput {
+  margin-right: 10px;
 }
