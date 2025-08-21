@@ -1,0 +1,382 @@
+.layout {
+    display: flex;
+    height: 100dvh;
+    width: 100vw;
+    background: var(--color-background);
+}
+
+.navbar {
+    background: var(--sidebar-background);
+    border-right: 1px solid var(--sidebar-border);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    transition: width 0.3s ease;
+    width: 220px;
+    min-width: 60px;
+    max-width: 220px;
+    overflow: hidden;
+    box-shadow: var(--shadow-lg);
+    color: var(--sidebar-text);
+}
+
+.navbar.collapsed {
+    width: 60px;
+    min-width: 60px;
+}
+
+/* Universal Navbar Button Style - applies to all buttons in navbar */
+.navbar button {
+    background: none;
+    border: none;
+    color: var(--sidebar-text);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border-radius: var(--radius-md);
+    padding: var(--spacing-md) var(--spacing-lg);
+    margin: var(--spacing-xs) var(--spacing-sm);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-lg);
+    width: calc(100% - var(--spacing-md));
+    text-align: left;
+    font-family: inherit;
+    font-size: var(--fs-200);
+    font-weight: var(--font-weight-medium);
+}
+
+.navbar button:hover {
+    background: var(--sidebar-hover);
+    color: var(--color-accent);
+    transform: translateY(-1px);
+}
+
+.navbar button:active {
+    transform: translateY(0);
+}
+
+.navbar button.active {
+    background: var(--sidebar-active);
+    color: var(--color-navy);
+}
+
+/* All SVGs in navbar buttons */
+.navbar button svg {
+    fill: var(--sidebar-text); /* SVGs use fill, not color */
+    flex-shrink: 0;
+    transition: all 0.2s ease;
+}
+
+.navbar button:hover svg {
+    transform: scale(1.05);
+}
+
+.navbar button.active svg {
+    fill: var(--color-navy); /* Explicit fill for active state */
+    color: var(--color-navy); /* Fallback for color-based icons */
+}
+
+/* List containers for navigation items */
+.nav-top,
+.nav-bottom {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.nav-top {
+    margin-top: var(--spacing-lg);
+}
+
+.nav-bottom {
+    margin-bottom: var(--spacing-lg);
+}
+
+/* Theme Toggle Section */
+.nav-theme {
+    padding: var(--spacing-sm) 0;
+    border-bottom: 1px solid var(--sidebar-border);
+    margin-bottom: var(--spacing-md);
+}
+
+/* Text labels in navbar buttons */
+.nav-label {
+    transition: opacity 0.3s ease, width 0.3s ease, margin 0.3s ease;
+    white-space: nowrap;
+    overflow: hidden;
+    font-family: var(--ff-base);
+    color: inherit;
+    font-weight: var(--font-weight-medium);
+}
+
+/* Collapsed navbar behavior */
+/* === ADAPTIVE SIDEBAR BEHAVIOR === */
+
+/* Default expanded navbar for desktop */
+.navbar {
+    width: var(--sidebar-width-expanded, 220px);
+    min-width: var(--sidebar-width-expanded, 220px);
+    max-width: var(--sidebar-width-expanded, 220px);
+    height: 100vh;
+    background: var(--sidebar-background);
+    border-right: 1px solid var(--sidebar-border);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    transition: width 0.3s ease, min-width 0.3s ease;
+    position: relative;
+}
+
+/* Collapsed state */
+.navbar.collapsed {
+    width: 70px;
+    min-width: 70px;
+    max-width: 70px;
+}
+
+.navbar.collapsed button {
+    justify-content: center;
+    padding: var(--spacing-md);
+    gap: 0;
+    position: relative;
+}
+
+.navbar.collapsed .nav-label {
+    display: none;
+}
+
+/* Toggle button for desktop */
+.toggle-button {
+    width: 100%;
+    padding: var(--spacing-md);
+    background: transparent;
+    border: none;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    transition: var(--transition-default);
+    margin-bottom: var(--spacing-md);
+    border-bottom: 1px solid var(--sidebar-border);
+}
+
+.toggle-button:hover {
+    background: var(--color-background-hover);
+    color: var(--color-text-primary);
+}
+
+/* === TOUCH-OPTIMIZED LABEL OVERLAYS === */
+.touch-label {
+    position: absolute;
+    left: calc(100% + var(--spacing-sm));
+    top: 50%;
+    transform: translateY(-50%);
+    background: var(--color-background);
+    color: var(--color-text-primary);
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--sidebar-border);
+    white-space: nowrap;
+    font-size: var(--fs-100);
+    font-weight: var(--font-weight-medium);
+    z-index: 1000;
+    animation: slideInLabel 0.2s ease-out;
+}
+
+.touch-label::before {
+    content: '';
+    position: absolute;
+    left: -6px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 0;
+    height: 0;
+    border-top: 6px solid transparent;
+    border-bottom: 6px solid transparent;
+    border-right: 6px solid var(--sidebar-border);
+}
+
+.touch-label::after {
+    content: '';
+    position: absolute;
+    left: -5px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 0;
+    height: 0;
+    border-top: 5px solid transparent;
+    border-bottom: 5px solid transparent;
+    border-right: 5px solid var(--color-background);
+}
+
+@keyframes slideInLabel {
+    from {
+        opacity: 0;
+        transform: translateY(-50%) translateX(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(-50%) translateX(0);
+    }
+}
+
+.nav-number {
+    background: var(--color-accent);
+    color: var(--color-navy);
+    border-radius: 50%;
+    width: 2rem;
+    height: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: var(--font-weight-bold);
+    font-size: var(--fs-100);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--color-border);
+}
+
+.main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: var(--color-background);
+    min-width: 0;
+    overflow: hidden;
+}
+
+.content {
+    flex: 1;
+    padding: var(--spacing-xl);
+    overflow: auto;
+    background: var(--color-background);
+    min-height: 100%;
+}
+
+.section {
+    flex: 1 1 0;
+    background: var(--color-background);
+    min-width: 0;
+    transition: margin-left 0.3s ease;
+    overflow: auto;
+    padding: var(--spacing-xl);
+}
+
+/* Placeholder content for sections */
+.placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    min-height: 400px;
+}
+
+.placeholderContent {
+    text-align: center;
+    max-width: 500px;
+    padding: var(--spacing-3xl);
+}
+
+.placeholderContent h1 {
+    font-size: var(--fs-500);
+    color: var(--color-text-primary);
+    margin-bottom: var(--spacing-lg);
+    font-family: var(--ff-accent);
+}
+
+.placeholderContent p {
+    font-size: var(--fs-300);
+    color: var(--color-text-secondary);
+    line-height: 1.6;
+}
+
+/* === DEVICE-SPECIFIC RESPONSIVE DESIGN === */
+
+/* Touch devices: Always collapsed with touch labels */
+@media (pointer: coarse) {
+    .navbar {
+        width: 70px !important;
+        min-width: 70px !important;
+        max-width: 70px !important;
+    }
+    
+    .toggle-button {
+        display: none !important;
+    }
+    
+    .navbar button {
+        min-height: 56px;
+        padding: var(--spacing-md);
+        margin: var(--spacing-xs) 0;
+        border-radius: var(--radius-md);
+        position: relative;
+        min-width: 56px;
+        aspect-ratio: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .nav-label {
+        display: none !important;
+    }
+}
+
+/* Small screens: Force collapsed regardless of input method */
+@media (max-width: 1024px) {
+    .navbar {
+        width: 70px !important;
+        min-width: 70px !important;
+        max-width: 70px !important;
+    }
+    
+    .toggle-button {
+        display: none !important;
+    }
+    
+    .nav-label {
+        display: none !important;
+    }
+}
+
+/* Large desktop screens with mouse: Full functionality */
+@media (min-width: 1025px) and (pointer: fine) {
+    .navbar {
+        width: var(--sidebar-width-expanded, 220px);
+        min-width: var(--sidebar-width-expanded, 220px);
+        transition: width 0.3s ease, min-width 0.3s ease;
+    }
+    
+    .navbar.collapsed {
+        width: 70px;
+        min-width: 70px;
+    }
+    
+    .toggle-button {
+        display: flex;
+    }
+    
+    .nav-label {
+        display: inline;
+    }
+    
+    .navbar.collapsed .nav-label {
+        display: none;
+    }
+    
+    /* Hover effects for desktop */
+    .navbar button:hover {
+        background: var(--color-background-hover);
+        color: var(--color-text-primary);
+    }
+}
+
+/* Hide touch labels on desktop */
+@media (pointer: fine) and (min-width: 1025px) {
+    .touch-label {
+        display: none !important;
+    }
+}

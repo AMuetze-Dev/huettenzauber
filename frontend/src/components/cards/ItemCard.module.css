@@ -1,0 +1,107 @@
+/* ItemCard Component Styles - Using modern Card-design variables */
+
+.itemCard {
+  border: 1px solid var(--card-border, #e0e0e0);
+  border-radius: var(--card-radius, 10px);
+  padding: var(--card-padding, 16px);
+  background: var(--card-background, #ffffff);
+  position: relative;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.itemCard:hover {
+  border-color: var(--accent-primary, #000000);
+  transform: translateY(-1px);
+  box-shadow: var(--card-shadow, 0 6px 20px rgba(0, 0, 0, 0.1));
+}
+
+.itemCard.dragging {
+  opacity: 0.5;
+  transform: rotate(2deg);
+  z-index: 1000;
+}
+
+.itemCard.simpleItem {
+  /* Kompaktere Darstellung für einfache Artikel */
+  min-height: auto;
+}
+
+.itemContent {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.itemHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.itemName {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary, #2d3748);
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* Price Display Styles */
+.simplePriceContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.simplePrice {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--accent-primary, #22543d);
+}
+
+.simpleSteps {
+  font-size: 12px;
+  color: var(--text-secondary, #718096);
+  font-style: italic;
+}
+
+/* Drag Handle */
+.dragHandle {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  color: var(--text-tertiary, #a0aec0);
+  cursor: grab;
+  opacity: 0.6;
+  transition: opacity 0.2s ease;
+}
+
+.dragHandle:hover {
+  opacity: 1;
+}
+
+.itemCard:hover .dragHandle {
+  opacity: 1;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .itemCard {
+    padding: 12px;
+  }
+  
+  .itemHeader {
+    gap: 8px;
+  }
+  
+  .itemName {
+    font-size: 14px;
+  }
+  
+  .simplePrice {
+    font-size: 13px;
+  }
+}

@@ -1,0 +1,391 @@
+/* Corporate Design Modal - Modern UI/UX */
+
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(28, 28, 28, 0.8);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.modal {
+  background: var(--clr-light-accent-100);
+  border-radius: var(--size-radius);
+  border: 2px solid var(--clr-light-accent-300);
+  box-shadow: var(--shadow-large);
+  width: 800px;
+  max-width: 90vw;
+  max-height: 90vh;
+  margin: 20px;
+  display: flex;
+  flex-direction: column;
+  animation: scaleIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-xlarge);
+  border-bottom: 2px solid var(--clr-light-accent-300);
+  background: var(--clr-light-accent-200);
+}
+
+.title {
+  margin: 0;
+  font-size: var(--fs-600);
+  font-weight: var(--font-weight-semibold);
+  color: var(--clr-text-contrast);
+  font-family: var(--ff-accent);
+}
+
+.closeButton {
+  background: var(--clr-base-300);
+  border: 2px solid var(--clr-base-400);
+  color: var(--clr-light-accent-100);
+  cursor: pointer;
+  padding: 12px;
+  border-radius: var(--size-radius);
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+}
+
+.closeButton:hover {
+  background: var(--clr-base-200);
+  border-color: var(--clr-base-300);
+  transform: scale(1.05);
+}
+
+.content {
+  padding: var(--spacing-xlarge);
+  overflow-y: auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xlarge);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-small);
+}
+
+.field label {
+  font-size: var(--fs-200);
+  font-weight: var(--font-weight-semibold);
+  color: var(--clr-text-contrast);
+  margin-bottom: 4px;
+}
+
+.field input {
+  padding: var(--spacing-medium);
+  border: 2px solid var(--clr-light-accent-300);
+  border-radius: var(--size-radius);
+  background: var(--clr-light-accent-100);
+  color: var(--clr-text-contrast);
+  font-size: var(--fs-200);
+  transition: all 0.2s ease;
+  font-family: var(--ff-base);
+}
+
+.field input:focus {
+  outline: none;
+  border-color: var(--clr-strong-accent-100);
+  box-shadow: 0 0 0 3px rgba(244, 184, 3, 0.2);
+  background: var(--clr-light-accent-200);
+}
+
+.field input::placeholder {
+  color: var(--clr-text-placeholder);
+}
+
+/* Simple Mode Styles */
+.simpleMode {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xlarge);
+}
+
+.simpleFields {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: var(--spacing-xlarge);
+}
+
+.switchToVariantsBtn {
+  background: var(--clr-light-accent-200);
+  color: var(--clr-text);
+  border: 2px solid var(--clr-light-accent-300);
+  padding: var(--spacing-medium) var(--spacing-xlarge);
+  border-radius: var(--size-radius);
+  font-size: var(--fs-200);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  align-self: flex-start;
+  font-family: var(--ff-base);
+}
+
+.switchToVariantsBtn:hover {
+  background: var(--clr-light-accent-300);
+  color: var(--clr-text-contrast);
+  border-color: var(--clr-strong-accent-100);
+  transform: translateY(-1px);
+}
+
+/* Variants Section */
+.variantsSection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xlarge);
+}
+
+.variantsHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--spacing-large);
+}
+
+.variantsHeader h4 {
+  margin: 0;
+  font-size: var(--fs-500);
+  font-weight: var(--font-weight-semibold);
+  color: var(--clr-text-contrast);
+  font-family: var(--ff-accent);
+}
+
+.variantActions {
+  display: flex;
+  gap: var(--spacing-medium);
+  align-items: center;
+}
+
+.addVariantBtn {
+  background: var(--clr-strong-accent-100);
+  color: var(--clr-text-contrast);
+  border: none;
+  padding: var(--spacing-medium) var(--spacing-large);
+  border-radius: var(--size-radius);
+  font-size: var(--fs-200);
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-small);
+  font-family: var(--ff-base);
+  box-shadow: var(--shadow-small);
+}
+
+.addVariantBtn:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-medium);
+  filter: brightness(1.1);
+}
+
+.simplifyBtn {
+  background: var(--clr-light-accent-200);
+  color: var(--clr-text);
+  border: 2px solid var(--clr-light-accent-300);
+  padding: 10px var(--spacing-large);
+  border-radius: var(--size-radius);
+  font-size: var(--fs-200);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: var(--ff-base);
+}
+
+.simplifyBtn:hover {
+  background: var(--clr-light-accent-300);
+  color: var(--clr-text-contrast);
+  border-color: var(--clr-strong-accent-100);
+  transform: translateY(-1px);
+}
+
+.variantsList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-large);
+}
+
+.variantEditItem {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-large);
+  padding: var(--spacing-xlarge);
+  background: var(--clr-light-accent-200);
+  border-radius: var(--size-radius);
+  border: 2px solid var(--clr-light-accent-300);
+  position: relative;
+  box-shadow: var(--shadow-small);
+}
+
+.variantFields {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-large);
+}
+
+.variantRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-large);
+}
+
+.variantEditItem .field {
+  margin: 0;
+}
+
+.removeVariantBtn {
+  background: var(--color-danger);
+  color: var(--clr-light-accent-100);
+  border: none;
+  width: 48px;
+  height: 48px;
+  border-radius: var(--size-radius);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  position: absolute;
+  top: var(--spacing-large);
+  right: var(--spacing-large);
+  box-shadow: var(--shadow-small);
+}
+
+.removeVariantBtn:hover {
+  background: var(--color-danger-dark);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-medium);
+}
+
+.actions {
+  display: flex;
+  justify-content: center;
+  gap: var(--spacing-large);
+  padding: var(--spacing-xlarge);
+  border-top: 2px solid var(--clr-light-accent-300);
+  background: var(--clr-light-accent-200);
+}
+
+.saveButton {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-small);
+  padding: var(--spacing-large) var(--spacing-xlarge);
+  border: none;
+  border-radius: var(--size-radius);
+  font-size: var(--fs-300);
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: var(--clr-strong-accent-100);
+  color: var(--clr-text-contrast);
+  min-width: 160px;
+  justify-content: center;
+  font-family: var(--ff-base);
+  box-shadow: var(--shadow-medium);
+}
+
+.saveButton:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-large);
+  filter: brightness(1.1);
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .modal {
+    width: 95vw;
+    margin: 10px;
+  }
+  
+  .header {
+    padding: var(--spacing-large);
+  }
+  
+  .content {
+    padding: var(--spacing-large);
+    gap: var(--spacing-large);
+  }
+  
+  .actions {
+    padding: var(--spacing-large);
+  }
+}
+
+@media (max-width: 768px) {
+  .modal {
+    min-width: auto;
+    width: 95vw;
+    max-width: none;
+    margin: 10px;
+  }
+  
+  .variantEditItem {
+    padding: var(--spacing-large);
+  }
+  
+  .variantRow {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-medium);
+  }
+  
+  .simpleFields {
+    grid-template-columns: 1fr;
+  }
+  
+  .variantsHeader {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .actions {
+    justify-content: center;
+  }
+  
+  .title {
+    font-size: var(--fs-500);
+  }
+  
+  .variantsHeader h4 {
+    font-size: var(--fs-400);
+  }
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}

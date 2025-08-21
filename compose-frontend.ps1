@@ -1,0 +1,1 @@
+docker compose up frontend --build -d

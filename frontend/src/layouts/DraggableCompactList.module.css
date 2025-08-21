@@ -1,0 +1,144 @@
+/* DraggableCompactList Layout - Item reordering within category */
+
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+  width: 100%;
+  position: relative;
+}
+
+.container.dragActive {
+  /* Highlight the entire area during drag */
+  background: rgba(244, 184, 3, 0.02);
+  border-radius: var(--radius-lg);
+}
+
+.addCardContainer {
+  display: flex;
+  justify-content: flex-start;
+  margin-bottom: var(--spacing-md);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  position: relative;
+}
+
+/* Drop Zones - only visible during active drag */
+.dropZone {
+  position: relative;
+  height: 8px;
+  margin: 2px 0;
+  transition: all 0.2s ease;
+  opacity: 0;
+  pointer-events: auto;
+  border-radius: var(--radius-sm);
+  background: rgba(244, 184, 3, 0.05);
+}
+
+.container.dragActive .dropZone {
+  opacity: 0.5;
+  pointer-events: auto;
+  height: 20px;
+  margin: var(--spacing-sm) var(--spacing-lg);
+  background: rgba(244, 184, 3, 0.1);
+  border: 1px dashed var(--color-accent);
+}
+
+.dropZone.dropZoneActive {
+  opacity: 1 !important;
+  height: 32px !important;
+  margin: var(--spacing-md) var(--spacing-lg) !important;
+  background: rgba(34, 197, 94, 0.15) !important;
+  border: 2px dashed var(--color-success) !important;
+}
+
+.endDropZone {
+  margin-top: var(--spacing-md);
+}
+
+/* Drop Indicator */
+.dropIndicator {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-xs);
+  height: 100%;
+  background: rgba(34, 197, 94, 0.05);
+  border: 2px dashed var(--color-success);
+  border-radius: var(--radius-md);
+  color: var(--color-success);
+  font-size: var(--fs-100);
+  font-weight: var(--font-weight-medium);
+  animation: pulseGlow 1.5s ease-in-out infinite;
+}
+
+.dropLine {
+  width: 60%;
+  height: 3px;
+  background: var(--color-success);
+  border-radius: 2px;
+  box-shadow: 0 0 8px rgba(34, 197, 94, 0.4);
+}
+
+.dropText {
+  font-size: var(--fs-100);
+  color: var(--color-success);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: 0.5px;
+}
+
+/* Item Container */
+.itemContainer {
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.container.dragActive .itemContainer {
+  /* Slight visual feedback during drag operations */
+  border-radius: var(--radius-md);
+}
+
+/* Pulsing animation for drop zones */
+@keyframes pulseGlow {
+  0%, 100% {
+    background: rgba(34, 197, 94, 0.05);
+    border-color: var(--color-success);
+  }
+  50% {
+    background: rgba(34, 197, 94, 0.1);
+    border-color: #16a34a;
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .container {
+    gap: var(--spacing-md);
+  }
+  
+  .dropZone.dropZoneActive {
+    height: 24px !important;
+    margin: var(--spacing-sm) 0 !important;
+  }
+  
+  .dropText {
+    font-size: var(--fs-50);
+  }
+}
+
+/* High Performance Mode */
+@media (prefers-reduced-motion: reduce) {
+  .dropIndicator {
+    animation: none;
+  }
+  
+  .dropZone,
+  .itemContainer {
+    transition: none;
+  }
+}

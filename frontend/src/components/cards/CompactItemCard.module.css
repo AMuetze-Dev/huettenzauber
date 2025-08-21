@@ -1,0 +1,293 @@
+/* Premium Compact Item Card - Modern Responsive Design */
+
+.compactCard {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-lg);
+  background: var(--color-background);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  transition: all 0.3s ease;
+  cursor: grab;
+  position: relative;
+  min-height: 70px;
+  margin: var(--spacing-xs) 0;
+}
+
+.compactCard:hover {
+  border-color: var(--color-border-hover);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+  background: var(--color-surface);
+}
+
+.compactCard:active {
+  cursor: grabbing;
+}
+
+.compactCard.dragging {
+  opacity: 0.6;
+  transform: rotate(2deg) scale(1.02);
+  box-shadow: var(--shadow-xl);
+  z-index: var(--z-drag);
+  border-color: var(--color-accent);
+}
+
+/* Drag Handle */
+.dragHandle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-muted);
+  cursor: grab;
+  padding: var(--spacing-xs);
+  border-radius: var(--radius-sm);
+  transition: all 0.2s ease;
+  min-width: 32px;
+  height: 32px;
+}
+
+.dragHandle:hover {
+  color: var(--color-accent);
+  background: var(--color-gray-50);
+}
+
+.compactCard:active .dragHandle {
+  cursor: grabbing;
+}
+
+/* Main Content Area */
+.cardContent {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  min-width: 0; /* Für text-overflow */
+}
+
+.primaryInfo {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.itemName {
+  font-size: var(--fs-300);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  margin: 0;
+  line-height: 1.3;
+  font-family: var(--ff-base);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+
+/* Premium Info Tags System */
+.infoTags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-xs);
+  align-items: center;
+}
+
+.infoTag {
+  display: inline-flex;
+  align-items: center;
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  font-size: var(--fs-100);
+  font-weight: var(--font-weight-medium);
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Price Tag - Premium Accent */
+.infoTag.price {
+  background: var(--color-accent);
+  color: var(--color-navy);
+  border-color: var(--color-accent);
+  font-weight: var(--font-weight-semibold);
+  box-shadow: var(--shadow-sm);
+}
+
+.infoTag:hover {
+  background: var(--color-gray-100);
+  border-color: var(--color-gray-300);
+}
+
+.infoTag.price:hover {
+  background: var(--color-accent-hover);
+  border-color: var(--color-accent-hover);
+}
+
+/* Action Buttons Container */
+.actionButtons {
+  display: flex;
+  flex-direction: row;
+  gap: var(--spacing-md);
+  flex-shrink: 0;
+}
+
+/* Edit Button */
+.editButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background: var(--color-background);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.editButton:hover {
+  background: var(--color-accent);
+  color: var(--color-navy);
+  border-color: var(--color-accent);
+  transform: scale(1.05);
+  box-shadow: var(--shadow-sm);
+}
+
+.editButton:active {
+  transform: scale(0.98);
+}
+
+/* Delete Button */
+.deleteButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background: var(--color-background);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.deleteButton:hover {
+  background: var(--color-danger, #dc3545);
+  color: white;
+  border-color: var(--color-danger, #dc3545);
+  transform: scale(1.05);
+  box-shadow: var(--shadow-sm);
+}
+
+.deleteButton:active {
+  transform: scale(0.98);
+}
+
+/* Responsive Design für Tablets */
+@media (max-width: 1024px) {
+  .compactCard {
+    padding: var(--spacing-lg) var(--spacing-md);
+    min-height: 80px;
+    gap: var(--spacing-sm);
+  }
+  
+  .dragHandle {
+    min-width: 36px;
+    height: 36px;
+  }
+  
+  .itemName {
+    font-size: var(--fs-200);
+  }
+  
+  .editButton {
+    width: 44px;
+    height: 44px;
+  }
+  
+  .infoTag {
+    padding: var(--spacing-sm) var(--spacing-md);
+    font-size: var(--fs-100);
+    max-width: 100px;
+  }
+}
+
+/* Mobile Optimierung */
+@media (max-width: 768px) {
+  .compactCard {
+    padding: var(--spacing-md);
+    min-height: 70px;
+    gap: var(--spacing-xs);
+  }
+  
+  .dragHandle {
+    min-width: 32px;
+    height: 32px;
+  }
+  
+  .itemName {
+    font-size: var(--fs-200);
+  }
+  
+  .editButton {
+    width: 40px;
+    height: 40px;
+  }
+  
+  .infoTag {
+    padding: var(--spacing-xs) var(--spacing-sm);
+    font-size: var(--fs-100);
+    max-width: 80px;
+  }
+  
+  .cardContent {
+    gap: var(--spacing-xs);
+  }
+}
+
+/* Touch-Optimierung für 10-Zoll Tablets */
+@media (max-width: 1024px) and (orientation: landscape) {
+  .compactCard {
+    min-height: 75px;
+    padding: var(--spacing-lg);
+  }
+  
+  .editButton {
+    width: 42px;
+    height: 42px;
+  }
+  
+  .dragHandle {
+    min-width: 34px;
+    height: 34px;
+  }
+}
+
+/* High Performance Mode */
+@media (prefers-reduced-motion: reduce) {
+  .compactCard,
+  .dragHandle,
+  .editButton,
+  .infoTag {
+    transition: none;
+  }
+  
+  .compactCard.dragging {
+    transform: none;
+  }
+  
+  .compactCard:hover {
+    transform: none;
+  }
+}

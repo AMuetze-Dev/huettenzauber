@@ -1,0 +1,76 @@
+/* Category Card - Premium View Mode Only */
+
+.viewContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-lg);
+  text-align: center;
+  min-height: 120px;
+  padding: var(--spacing-lg);
+  cursor: grab;
+  transition: all 0.3s ease;
+}
+
+.viewContainer:active {
+  cursor: grabbing;
+}
+
+.viewContainer.dragging {
+  opacity: 0.5;
+  transform: scale(0.95);
+  cursor: grabbing;
+}
+
+.iconContainer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-accent);
+  transition: all 0.3s ease;
+}
+
+.categoryName {
+  margin: 0;
+  font-size: var(--fs-300);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  font-family: var(--ff-base);
+  line-height: 1.3;
+  word-break: break-word;
+}
+
+/* Hover Effects via Parent CardWrapper */
+.viewContainer:hover .iconContainer svg {
+  fill: var(--color-accent);
+  transform: scale(1.1);
+}
+
+.viewContainer:hover .categoryName {
+  color: var(--color-accent);
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .viewContainer {
+    min-height: 100px;
+    gap: var(--spacing-md);
+  }
+  
+  .categoryName {
+    font-size: var(--fs-200);
+  }
+}
+
+@media (max-width: 768px) {
+  .viewContainer {
+    min-height: 80px;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-md);
+  }
+  
+  .categoryName {
+    font-size: var(--fs-100);
+  }
+}

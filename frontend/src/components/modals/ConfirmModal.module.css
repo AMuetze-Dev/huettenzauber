@@ -1,0 +1,131 @@
+/* ConfirmModal Component Styles - Using modern Card-design variables */
+
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.modal {
+  background: var(--card-background, #ffffff);
+  border-radius: var(--card-radius, 10px);
+  border: 1px solid var(--card-border, #e0e0e0);
+  box-shadow: var(--card-shadow, 0 6px 20px rgba(0, 0, 0, 0.1));
+  min-width: 400px;
+  max-width: 500px;
+  margin: 20px;
+  animation: scaleIn 0.2s ease-out;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: var(--card-padding, 16px);
+  border-bottom: 1px solid var(--card-border, #e0e0e0);
+}
+
+.iconContainer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  color: var(--color-warning, #f39c12);
+}
+
+.title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary, #2d3748);
+}
+
+.content {
+  padding: var(--card-padding, 16px);
+}
+
+.message {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text-primary, #2d3748);
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: var(--card-padding, 16px);
+  border-top: 1px solid var(--card-border, #e0e0e0);
+  background: var(--card-background, #ffffff);
+  border-bottom-left-radius: var(--card-radius, 10px);
+  border-bottom-right-radius: var(--card-radius, 10px);
+}
+
+.cancelButton,
+.confirmButton {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.cancelButton {
+  background: var(--card-background, #ffffff);
+  border: 1px solid var(--card-border, #e0e0e0);
+  color: var(--text-primary, #2d3748);
+}
+
+.cancelButton:hover {
+  background: var(--card-background-hover, #f8f9fa);
+  border-color: var(--accent-primary, #000000);
+}
+
+.confirmButton {
+  background: var(--color-error, #dc3545);
+  border: 1px solid var(--color-error, #dc3545);
+  color: white;
+}
+
+.confirmButton:hover {
+  background: var(--color-error-dark, #c82333);
+  transform: translateY(-1px);
+  border-color: var(--color-error-dark, #c82333);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}

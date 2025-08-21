@@ -1,0 +1,8 @@
+FROM node:24.5.0-alpine
+WORKDIR /app
+COPY package.json package-lock.json* pnpm-lock.yaml* yarn.lock* ./
+RUN \
+    if [ -f package-lock.json ]; then npm install --legacy-peer-deps; \
+    elif [ -f pnpm-lock.yaml ]; then npm install -g pnpm && pnpm install --legacy-peer-deps; \
+    elif [ -f yarn.lock ]; then yarn install; \
+    else npm install --legacy-peer-deps; fi

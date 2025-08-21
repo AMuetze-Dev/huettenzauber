@@ -1,0 +1,89 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 100vw;
+  padding: 0 1rem;
+  gap: 1rem;
+}
+
+.addCardContainer {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+.itemWrapper {
+  position: relative;
+}
+
+.dropZone {
+  height: 4px;
+  margin: 2px 0;
+  border-radius: 2px;
+  opacity: 0;
+  transition: all 0.2s ease;
+  background: var(--color-primary);
+}
+
+.dropZone:hover,
+.dropZone.dragOver {
+  opacity: 1;
+  height: 8px;
+  margin: 4px 0;
+}
+
+.endDropZone {
+  height: 16px;
+  margin-top: 8px;
+  border-radius: 4px;
+  border: 2px dashed transparent;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary, #718096);
+  font-size: 12px;
+}
+
+.endDropZone:hover,
+.endDropZone.dragOver {
+  border-color: var(--color-primary);
+  background: rgba(244, 184, 3, 0.1);
+  color: var(--color-primary);
+}
+
+.endDropZone.dragOver::before {
+  content: "Hier ablegen";
+}
+
+/* Optimierung für kleine Bildschirme (10-Zoll Tablets) */
+@media (max-width: 1024px) {
+  .container {
+    padding: 0 0.75rem;
+    gap: 0.75rem;
+  }
+  
+  .list {
+    gap: 0.5rem;
+  }
+}
+
+/* Touch-optimierte Abstände für sehr kleine Displays */
+@media (max-width: 768px) {
+  .container {
+    padding: 0 0.5rem;
+    gap: 0.5rem;
+  }
+  
+  .list {
+    gap: 0.4rem;
+  }
+}

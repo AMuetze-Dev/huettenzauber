@@ -1,0 +1,203 @@
+/* Modern Icon Dropdown - Inline Design */
+
+.iconFieldWrapper {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Dropdown Button - Clear interaction cue */
+.iconDropdownButton {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md) var(--spacing-lg);
+  background: var(--card-background);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-height: 56px;
+  justify-content: space-between;
+}
+
+.iconDropdownButton:hover {
+  border-color: var(--color-accent);
+  background: var(--card-background-hover);
+  box-shadow: var(--shadow-sm);
+}
+
+.iconDropdownButton:focus {
+  outline: none;
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px rgba(244, 184, 3, 0.1);
+}
+
+.iconDropdownContent {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  flex: 1;
+}
+
+.iconPreview {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-primary);
+  flex-shrink: 0;
+}
+
+.iconLabel {
+  font-size: var(--fs-200);
+  color: var(--color-text-secondary);
+  font-weight: 500;
+}
+
+.dropdownArrow {
+  color: var(--color-text-muted);
+  transition: transform 0.3s ease;
+  flex-shrink: 0;
+}
+
+.dropdownArrowOpen {
+  transform: rotate(180deg);
+}
+
+/* Inline Dropdown */
+.iconDropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: var(--card-background);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  z-index: var(--z-dropdown);
+  margin-top: var(--spacing-xs);
+  max-height: 320px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.iconDropdownHeader {
+  padding: var(--spacing-md);
+  border-bottom: 1px solid var(--card-border);
+}
+
+.iconSearchInput {
+  width: 100%;
+  padding: var(--spacing-md);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-md);
+  background: var(--color-background);
+  font-size: var(--fs-200);
+  font-family: var(--ff-base);
+  color: var(--color-text-primary);
+  transition: all 0.3s ease;
+}
+
+.iconSearchInput:focus {
+  outline: none;
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 2px rgba(244, 184, 3, 0.1);
+  background: var(--card-background);
+}
+
+.iconSearchInput::placeholder {
+  color: var(--color-text-muted);
+}
+
+.iconGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(56px, 1fr));
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md);
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+/* Compact Icon Buttons for Inline Design */
+.iconButton,
+.iconButtonSelected {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-xs);
+  border: 1px solid var(--card-border);
+  background: var(--color-background);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-height: 56px;
+  min-width: 56px;
+}
+
+.iconButton:hover {
+  border-color: var(--color-accent);
+  background: var(--card-background-hover);
+  transform: scale(1.05);
+}
+
+.iconButtonSelected {
+  border-color: var(--color-accent);
+  background: var(--color-accent);
+  color: var(--color-navy);
+}
+
+.iconButtonSelected:hover {
+  background: var(--color-accent-hover);
+  transform: scale(1.05);
+}
+
+/* Legacy Modal Styles - Keep for backwards compatibility but hidden */
+.iconModal {
+  display: none;
+}
+
+.iconModalContent,
+.iconModalHeader,
+.iconModalTitle,
+.iconModalBody,
+.iconModalFooter,
+.modalButton,
+.modalButtonCancel,
+.modalButtonConfirm,
+.iconButtonIcon,
+.iconButtonName {
+  display: none;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .iconDropdown {
+    max-height: 280px;
+  }
+  
+  .iconGrid {
+    grid-template-columns: repeat(auto-fill, minmax(48px, 1fr));
+    max-height: 200px;
+  }
+  
+  .iconButton,
+  .iconButtonSelected {
+    min-height: 48px;
+    min-width: 48px;
+  }
+}
+
+/* High Performance Mode */
+@media (prefers-reduced-motion: reduce) {
+  .iconButton,
+  .iconButtonSelected,
+  .iconSearchInput {
+    transition: none;
+  }
+  
+  .iconButton:hover,
+  .iconButtonSelected:hover {
+    transform: none;
+  }
+}

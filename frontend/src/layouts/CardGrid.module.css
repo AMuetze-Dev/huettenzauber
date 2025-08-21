@@ -1,0 +1,105 @@
+/* Premium Card Grid - Modern Responsive Layout */
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--spacing-2xl);
+  width: 100%;
+  padding: 0 var(--spacing-4xl);
+  margin: 0 auto;
+  max-width: 1400px;
+  align-items: start;
+}
+
+/* Desktop - 3 Spalten bei genug Platz */
+@media (min-width: 1200px) {
+  .grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--spacing-3xl);
+    padding: 0 var(--spacing-4xl);
+  }
+}
+
+/* Laptop/Tablet - 2 Spalten */
+@media (max-width: 1199px) and (min-width: 768px) {
+  .grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--spacing-2xl);
+    padding: 0 var(--spacing-3xl);
+    max-width: 900px;
+  }
+}
+
+/* Tablet Portrait - 2 Spalten mit weniger Padding */
+@media (max-width: 1024px) and (min-width: 768px) {
+  .grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--spacing-xl);
+    padding: 0 var(--spacing-2xl);
+  }
+}
+
+/* Mobile - 1 Spalte */
+@media (max-width: 767px) {
+  .grid {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-lg);
+    padding: 0 var(--spacing-lg);
+    max-width: 500px;
+  }
+}
+
+/* 10-Zoll Tablet Optimierung - Landscape */
+@media (max-width: 1024px) and (orientation: landscape) and (min-height: 600px) {
+  .grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--spacing-xl);
+    padding: 0 var(--spacing-2xl);
+  }
+}
+
+/* 10-Zoll Tablet Optimierung - Portrait */
+@media (max-width: 768px) and (orientation: portrait) and (min-width: 600px) {
+  .grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--spacing-lg);
+    padding: 0 var(--spacing-xl);
+  }
+}
+
+/* Ultra-wide Displays */
+@media (min-width: 1600px) {
+  .grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--spacing-4xl);
+    max-width: 1600px;
+  }
+}
+
+/* Sehr kleine Mobile Geräte */
+@media (max-width: 480px) {
+  .grid {
+    gap: var(--spacing-md);
+    padding: 0 var(--spacing-md);
+  }
+}
+
+/* Performance Optimierung für schwächere Geräte */
+@media (prefers-reduced-motion: reduce) {
+  .grid > * {
+    transition: none;
+  }
+}
+
+/* Container Query Support (falls Browser unterstützt) */
+@container (min-width: 800px) {
+  .grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@container (min-width: 1200px) {
+  .grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}

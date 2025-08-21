@@ -1,0 +1,365 @@
+:root,
+[data-theme="light"] {
+    /* Typography System */
+    --ff-base: "trueno", sans-serif;
+    --ff-accent: "library3", sans-serif;
+
+    --fs-100: clamp(0.78rem, 0.78rem + 0.03vw, 0.80rem);
+    --fs-200: clamp(0.94rem, 0.92rem + 0.09vw, 1.00rem);
+    --fs-300: clamp(1.13rem, 1.09rem + 0.19vw, 1.25rem);
+    --fs-400: clamp(1.35rem, 1.29rem + 0.31vw, 1.56rem);
+    --fs-500: clamp(1.62rem, 1.52rem + 0.49vw, 1.95rem);
+    --fs-600: clamp(1.94rem, 1.80rem + 0.74vw, 2.44rem);
+
+    /* Light Mode Colors */
+    --color-white: #ffffff;
+    --color-black: #000000;
+    --color-gray-50: #f9fafb;
+    --color-gray-100: #f3f4f6;
+    --color-gray-200: #e5e7eb;
+    --color-gray-300: #d1d5db;
+    --color-gray-400: #9ca3af;
+    --color-gray-500: #6b7280;
+    --color-gray-600: #4b5563;
+    --color-gray-700: #374151;
+    --color-gray-800: #1f2937;
+    --color-gray-900: #111827;
+    --color-accent: #f4b803;
+    --color-accent-hover: #e6a800;
+    --color-accent-light: #fef3c7;
+    --color-danger: #dc3545;
+    --color-success: #22c55e;
+    --color-warning: #f39c12;
+    --color-error: #dc3545;
+    --color-error-dark: #c82333;
+
+    /* Light Mode Semantic Colors */
+    --color-text-primary: var(--color-black);
+    --color-text-secondary: var(--color-gray-600);
+    --color-text-muted: var(--color-gray-400);
+    --color-text-tertiary: var(--color-gray-400);
+    --color-background: var(--color-white);
+    --color-surface: var(--color-gray-50);
+    --color-border: var(--color-gray-200);
+    --color-border-hover: var(--color-accent);
+
+    /* Light Mode Sidebar Colors - Fixed to #292929 */
+    --sidebar-background: #292929;
+    --sidebar-text: #ffffff;
+    --sidebar-text-muted: #d1d5db;
+    --sidebar-border: rgba(209, 213, 219, 0.2);
+    --sidebar-hover: rgba(244, 184, 3, 0.1);
+    --sidebar-active: var(--color-accent);
+
+    /* Card System */
+    --card-background: var(--color-white);
+    --card-background-hover: var(--color-gray-50);
+    --card-background-subtle: var(--color-gray-50);
+    --card-border: var(--color-gray-200);
+    --card-radius: 10px;
+    --card-padding: 16px;
+    --card-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+    --card-shadow-hover: 0 8px 25px rgba(0, 0, 0, 0.15);
+
+    /* Modal */
+    --modal-overlay: rgba(40, 40, 40, 0.6);
+
+    /* Theme Icons */
+    --theme-icon-color: var(--color-gray-600);
+    --theme-icon-hover: var(--color-accent);
+
+    /* Spacing System */
+    --spacing-xs: 4px;
+    --spacing-sm: 8px;
+    --spacing-md: 12px;
+    --spacing-lg: 16px;
+    --spacing-xl: 20px;
+    --spacing-2xl: 24px;
+    --spacing-3xl: 32px;
+    --spacing-4xl: 40px;
+
+    /* Font Weights */
+    --font-weight-light: 300;
+    --font-weight-normal: 400;
+    --font-weight-medium: 500;
+    --font-weight-semibold: 600;
+    --font-weight-bold: 700;
+
+    /* Shadows */
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.1);
+    --shadow-xl: 0 20px 40px rgba(0, 0, 0, 0.15);
+
+    /* Border Radius */
+    --radius-sm: 6px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    --radius-xl: 16px;
+
+    /* Component Tokens */
+    --card-padding: var(--spacing-xl);
+    --card-radius: var(--radius-xl);
+    --card-shadow: var(--shadow-sm);
+    --card-shadow-hover: var(--shadow-md);
+
+    --button-padding: var(--spacing-md) var(--spacing-xl);
+    --button-radius: var(--radius-lg);
+
+    --input-padding: var(--spacing-lg);
+    --input-radius: var(--radius-lg);
+
+    /* Z-Index Scale */
+    --z-dropdown: 1000;
+    --z-modal: 2000;
+    --z-tooltip: 3000;
+    --z-drag: 9999;
+}
+
+/* Dark Mode Theme */
+[data-theme="dark"] {
+    /* Dark Mode Colors - Fixed for better contrast */
+    --color-white: #1e1e1e;
+    --color-black: #ffffff;
+    --color-gray-50: #2a2a2a;
+    --color-gray-100: #333333;
+    --color-gray-200: #404040;
+    --color-gray-300: #525252;
+    --color-gray-400: #6b7280;
+    --color-gray-500: #9ca3af;
+    --color-gray-600: #d1d5db;
+    --color-gray-700: #e5e7eb;
+    --color-gray-800: #f3f4f6;
+    --color-gray-900: #f9fafb;
+    --color-accent: #f4b803;
+    --color-accent-hover: #ffd700;
+    --color-accent-light: #2d1b00;
+    --color-danger: #ff6b6b;
+    --color-success: #51d88a;
+    --color-warning: #ffa726;
+    --color-error: #ff6b6b;
+    --color-error-dark: #ff5252;
+
+    /* Dark Mode Semantic Colors - Better contrast */
+    --color-text-primary: #f8fafc; /* Very light for better readability */
+    --color-text-secondary: #cbd5e1; /* Light gray for secondary text */
+    --color-text-muted: #94a3b8; /* Medium gray for muted text */
+    --color-text-tertiary: #64748b; /* Darker gray for tertiary text */
+    --color-background: #1e1e1e;
+    --color-surface: #2a2a2a;
+    --color-border: #404040;
+    --color-border-hover: var(--color-accent);
+
+    /* Dark Mode Sidebar Colors - Same as Light Mode (always #292929) */
+    --sidebar-background: #292929;
+    --sidebar-text: #ffffff;
+    --sidebar-text-muted: #d1d5db;
+    --sidebar-border: rgba(209, 213, 219, 0.2);
+    --sidebar-hover: rgba(244, 184, 3, 0.15);
+    --sidebar-active: var(--color-accent);
+
+    /* Dark Mode Card System */
+    --card-background: #2a2a2a;
+    --card-background-hover: #333333;
+    --card-background-subtle: #333333;
+    --card-border: #404040;
+    --card-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+    --card-shadow-hover: 0 8px 25px rgba(0, 0, 0, 0.4);
+
+    /* Dark Mode Modal */
+    --modal-overlay: rgba(0, 0, 0, 0.8);
+
+    /* Dark Mode Theme Icons */
+    --theme-icon-color: var(--color-gray-400);
+    --theme-icon-hover: var(--color-accent);
+}
+
+/* Reset & Base Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: var(--ff-base);
+    font-size: var(--fs-200);
+    line-height: 1.5;
+    font-weight: var(--font-weight-light);
+    color: var(--color-text-primary);
+    transition: all 0.2s ease;
+}
+
+@font-face {
+    font-family: "trueno";
+    src: url("/Trueno.otf") format("opentype");
+    font-style: normal;
+    font-weight: normal;
+}
+
+@font-face {
+    font-family: "library3";
+    src: url("/Library3.otf") format("opentype");
+    font-style: normal;
+    font-weight: normal;
+}
+
+::-webkit-scrollbar {
+    width: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+    border-radius: 2px;
+    background-color: var(--color-gray-300);
+}
+
+::-webkit-scrollbar-track {
+    background-color: transparent;
+}
+
+body {
+    background-color: var(--color-background);
+    font-weight: var(--font-weight-normal);
+}
+
+/* Typography */
+h1, h2, h3, h4, h5, h6 {
+    font-family: var(--ff-accent);
+    font-weight: var(--font-weight-semibold);
+    line-height: 1.2;
+}
+
+/* Forms */
+input, textarea, select {
+    width: 100%;
+    padding: var(--input-padding);
+    border: 2px solid var(--color-border);
+    border-radius: var(--input-radius);
+    background: var(--color-background);
+    color: var(--color-text-primary);
+    font-family: inherit;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+input:focus, textarea:focus, select:focus {
+    outline: none;
+    border-color: var(--color-border-hover);
+    box-shadow: 0 0 0 3px rgba(244, 184, 3, 0.1);
+}
+
+input::placeholder, textarea::placeholder {
+    color: var(--color-text-muted);
+}
+
+/* Buttons */
+button {
+    border: none;
+    border-radius: var(--button-radius);
+    padding: var(--button-padding);
+    font-family: inherit;
+    font-weight: var(--font-weight-medium);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.btn-primary {
+    background: var(--color-accent);
+    color: var(--color-black);
+}
+
+.btn-primary:hover {
+    background: var(--color-accent-hover);
+    transform: translateY(-1px);
+}
+
+.btn-secondary {
+    background: var(--color-gray-800);
+    color: var(--color-white);
+}
+
+.btn-secondary:hover {
+    background: var(--color-gray-700);
+    transform: translateY(-1px);
+}
+
+.btn-neutral {
+    background: var(--color-gray-100);
+    color: var(--color-text-secondary);
+}
+
+.btn-neutral:hover {
+    background: var(--color-gray-200);
+}
+
+/* Cards */
+.card {
+    background: var(--color-background);
+    border: 1px solid var(--color-border);
+    border-radius: var(--card-radius);
+    padding: var(--card-padding);
+    box-shadow: var(--card-shadow);
+    transition: all 0.2s ease;
+}
+
+.card:hover {
+    border-color: var(--color-border-hover);
+    box-shadow: var(--card-shadow-hover);
+    transform: translateY(-2px);
+}
+
+/* Tags */
+.tag {
+    display: inline-flex;
+    align-items: center;
+    background: var(--color-surface);
+    color: var(--color-text-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-xs) var(--spacing-md);
+    font-size: var(--fs-100);
+    font-weight: var(--font-weight-medium);
+    transition: all 0.2s ease;
+}
+
+.tag:hover {
+    background: var(--color-gray-100);
+    border-color: var(--color-gray-300);
+}
+
+.tag.accent {
+    background: var(--color-accent);
+    color: var(--color-black);
+    border-color: var(--color-accent);
+    box-shadow: var(--shadow-sm);
+}
+
+/* Utilities */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* Icon Fix - Ensure React Icons display correctly */
+svg {
+    display: inline-block;
+    vertical-align: middle;
+    flex-shrink: 0;
+}
+
+/* Specific fix for buttons with icons */
+button svg,
+.button svg {
+    display: inline-block !important;
+    width: auto !important;
+    height: auto !important;
+    min-width: 16px;
+    min-height: 16px;
+    flex-shrink: 0;
+}

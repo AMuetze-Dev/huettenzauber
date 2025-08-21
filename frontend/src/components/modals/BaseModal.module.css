@@ -1,0 +1,261 @@
+/* Base Modal - Unified Design System */
+
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--modal-overlay);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: var(--spacing-lg);
+}
+
+.modalContainer {
+  background: var(--card-background);
+  border-radius: var(--card-radius);
+  box-shadow: var(--shadow-xl);
+  width: 75vw;
+  height: 75vh;
+  max-width: 1200px;
+  max-height: 800px;
+  min-width: 400px;
+  min-height: 300px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--card-border);
+}
+
+/* Modal Header */
+.modalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-xl) var(--spacing-xl) var(--spacing-lg);
+  border-bottom: 1px solid var(--card-border);
+  background: var(--color-surface);
+  flex-shrink: 0;
+}
+
+.modalTitle {
+  font-size: var(--fs-500, 1.5rem);
+  font-weight: var(--font-weight-semibold, 600);
+  color: var(--color-text-primary);
+  margin: 0;
+  font-family: var(--ff-accent, inherit);
+}
+
+.closeButton {
+  background: transparent;
+  border: none;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  padding: var(--spacing-sm);
+  border-radius: var(--radius-md, 6px);
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+}
+
+.closeButton:hover {
+  background: var(--color-error-light, rgba(239, 68, 68, 0.1));
+  color: var(--color-error, #ef4444);
+  transform: scale(1.05);
+}
+
+.closeButton:active {
+  transform: scale(0.95);
+}
+
+.closeButton:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.3);
+}
+
+/* Modal Content */
+.modalContent {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Input Container - Main content area */
+.inputContainer {
+  flex: 1;
+  padding: var(--spacing-xl);
+  overflow-y: auto;
+  background: var(--card-background);
+}
+
+/* Custom scrollbar for input container */
+.inputContainer::-webkit-scrollbar {
+  width: 8px;
+}
+
+.inputContainer::-webkit-scrollbar-track {
+  background: var(--color-surface);
+  border-radius: 4px;
+}
+
+.inputContainer::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 4px;
+}
+
+.inputContainer::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-secondary);
+}
+
+/* Command Container - Action buttons area */
+.commandContainer {
+  padding: var(--spacing-lg) var(--spacing-xl);
+  border-top: 1px solid var(--card-border);
+  background: var(--color-surface);
+  display: flex;
+  gap: var(--spacing-md);
+  justify-content: flex-end;
+  flex-shrink: 0;
+}
+
+/* Command Container Button Styles */
+.commandContainer button {
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-radius: var(--radius-md, 6px);
+  font-weight: var(--font-weight-medium, 500);
+  font-size: var(--fs-200, 0.875rem);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+  min-width: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+}
+
+/* Primary Action Button */
+.commandContainer button[type="submit"],
+.commandContainer .primaryButton {
+  background: var(--color-accent);
+  color: var(--color-navy);
+  border-color: var(--color-accent);
+}
+
+.commandContainer button[type="submit"]:hover,
+.commandContainer .primaryButton:hover {
+  background: var(--color-accent-hover);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+/* Secondary Action Button */
+.commandContainer .secondaryButton {
+  background: transparent;
+  color: var(--color-text-primary);
+  border-color: var(--card-border);
+}
+
+.commandContainer .secondaryButton:hover {
+  background: var(--color-surface);
+  border-color: var(--color-text-secondary);
+}
+
+/* Danger Action Button */
+.commandContainer .dangerButton {
+  background: var(--color-error);
+  color: white;
+  border-color: var(--color-error);
+}
+
+.commandContainer .dangerButton:hover {
+  background: var(--color-error-dark);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .modalContainer {
+    width: 95vw;
+    height: 90vh;
+    min-width: 300px;
+  }
+  
+  .modalHeader {
+    padding: var(--spacing-lg);
+  }
+  
+  .modalTitle {
+    font-size: var(--fs-400, 1.25rem);
+  }
+  
+  .inputContainer {
+    padding: var(--spacing-lg);
+  }
+  
+  .commandContainer {
+    padding: var(--spacing-md) var(--spacing-lg);
+    flex-direction: column;
+  }
+  
+  .commandContainer button {
+    width: 100%;
+    min-width: auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .modalOverlay {
+    padding: var(--spacing-md);
+  }
+  
+  .modalContainer {
+    width: 100vw;
+    height: 95vh;
+    min-width: auto;
+  }
+}
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .modalContainer,
+  .closeButton,
+  .commandContainer button {
+    transition: none;
+  }
+  
+  .closeButton:hover,
+  .commandContainer button:hover {
+    transform: none;
+  }
+}
+
+/* Focus management */
+.modalContainer:focus {
+  outline: none;
+}
+
+/* Animation for modal entrance */
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.modalContainer {
+  animation: modalFadeIn 0.2s ease-out;
+}
