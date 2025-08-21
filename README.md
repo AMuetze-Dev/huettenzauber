@@ -126,7 +126,7 @@ npm test
 
 ## 📝 API Dokumentation
 
-Die vollständige API-Dokumentation ist verfügbar unter:
+Die vollständige API-Dokumentierung ist verfügbar unter:
 
 - **Swagger UI**: http://localhost:8000/docs
 - **ReDoc**: http://localhost:8000/redoc
