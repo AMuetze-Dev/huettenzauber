@@ -96,13 +96,13 @@ const VariantItem: React.FC<VariantItemProps> = ({
             {formatPrice(variant.price)}
           </span>
         </div>
-
-        {currentQuantity > 0 && (
-          <div className={styles.quantityBadge}>
-            <span>{currentQuantity}</span>
-          </div>
-        )}
       </div>
+
+      {currentQuantity > 0 && (
+        <div className={styles.quantityBadge}>
+          <span>{currentQuantity}</span>
+        </div>
+      )}
 
       <div className={styles.touchHint}>
         {currentQuantity === 0 ? (

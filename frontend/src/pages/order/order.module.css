@@ -84,9 +84,9 @@
   padding: var(--spacing-lg);
   box-shadow: var(--card-shadow);
   transition: all 0.2s ease;
-  flex: 1 1 280px; /* Grow, shrink, base width */
+  flex: 0 1 320px; /* Keine Expansion, aber Shrink erlaubt, feste Basis-Breite */
   min-width: 280px;
-  max-width: 400px;
+  max-width: 320px; /* Begrenzte maximale Breite für Konsistenz */
   display: flex;
   flex-direction: column;
 }
@@ -187,8 +187,8 @@
 
 .quantityBadge {
   position: absolute;
-  top: -8px;
-  right: -8px;
+  top: 8px;
+  right: 8px;
   background: var(--color-accent);
   color: var(--color-black);
   border-radius: 50%;
@@ -201,6 +201,7 @@
   font-weight: var(--font-weight-bold);
   border: 2px solid var(--card-background);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  z-index: 10;
 }
 
 .touchHint {
@@ -439,8 +440,9 @@
   
   .itemCard {
     padding: var(--spacing-md);
-    flex: 1 1 240px;
+    flex: 0 1 280px;
     min-width: 240px;
+    max-width: 280px;
   }
   
   .variants {
@@ -475,14 +477,23 @@
   }
 }
 
+@media (max-width: 800px) {
+  .itemCard {
+    flex: 1 1 100%;
+    max-width: 100%;
+    min-width: auto;
+  }
+}
+
 @media (max-width: 480px) {
   .itemGrid {
     justify-content: center;
   }
   
   .itemCard {
-    flex: 1 1 100%;
+    flex: 0 1 100%;
     max-width: 100%;
+    min-width: auto;
   }
   
   .variants {
@@ -508,6 +519,8 @@
     width: 20px;
     height: 20px;
     font-size: var(--fs-50);
+    top: 6px;
+    right: 6px;
   }
   
   .touchHint {

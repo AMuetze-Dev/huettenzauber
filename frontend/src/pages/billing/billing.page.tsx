@@ -15,7 +15,20 @@ const BillingPage: React.FC = () => {
           (v: any) => v.id === variantId
         );
         if (variant) {
-          return `${item.name} - ${variant.name}`;
+          // Prüfe ob es mehrere Varianten gibt oder ob der Variantenname aussagekräftig ist
+          const hasMultipleVariants = item.item_variants.length > 1;
+          const isStandardVariant =
+            variant.name === "Standard" ||
+            variant.name === "1.0" ||
+            variant.name === "Default" ||
+            !variant.name;
+
+          // Zeige Variantennamen nur bei mehreren Varianten oder aussagekräftigen Namen
+          if (hasMultipleVariants && !isStandardVariant) {
+            return `${item.name} - ${variant.name}`;
+          } else {
+            return item.name;
+          }
         }
       }
     }
