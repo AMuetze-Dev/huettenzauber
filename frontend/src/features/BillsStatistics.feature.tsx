@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useBill } from '../context/BillContext';
 import { useProduct } from '../context/ProductContext';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement } from 'chart.js';
@@ -34,28 +34,34 @@ const BillsStatistics: React.FC<BillsStatisticsProps> = () => {
 	}, [reloadBills]);
 
 	// Hilfsfunktionen aus BillsManagement
-	const getItemVariant = (variantId: number) => {
-		for (const item of items) {
-			const variant = item.item_variants?.find((v: any) => v.id === variantId);
-			if (variant) {
-				return { item, variant };
+	const getItemVariant = useCallback(
+		(variantId: number) => {
+			for (const item of items) {
+				const variant = item.item_variants?.find((v: any) => v.id === variantId);
+				if (variant) {
+					return { item, variant };
+				}
 			}
-		}
-		return null;
-	};
+			return null;
+		},
+		[items]
+	);
 
-	const getItemPrice = (billItem: any): number => {
-		if (billItem.item_price !== undefined && billItem.item_price !== null && !isNaN(billItem.item_price)) {
-			return billItem.item_price;
-		}
+	const getItemPrice = useCallback(
+		(billItem: any): number => {
+			if (billItem.item_price !== undefined && billItem.item_price !== null && !isNaN(billItem.item_price)) {
+				return billItem.item_price;
+			}
 
-		const result = getItemVariant(billItem.item_variant_id);
-		if (result?.variant?.price !== undefined && result.variant.price !== null && !isNaN(result.variant.price)) {
-			return result.variant.price;
-		}
+			const result = getItemVariant(billItem.item_variant_id);
+			if (result?.variant?.price !== undefined && result.variant.price !== null && !isNaN(result.variant.price)) {
+				return result.variant.price;
+			}
 
-		return 0;
-	};
+			return 0;
+		},
+		[getItemVariant]
+	);
 
 	// Berechnung der Verbrauchsstatistiken
 	const consumptionData = useMemo((): ItemConsumption[] => {
@@ -106,13 +112,12 @@ const BillsStatistics: React.FC<BillsStatisticsProps> = () => {
 			});
 
 		return Array.from(itemMap.values()).sort((a, b) => b.totalQuantity - a.totalQuantity);
-	}, [bills, items]);
+	}, [bills, getItemPrice, getItemVariant]);
 
 	// Chart-Daten vorbereiten
 	const chartData = useMemo(() => {
 		const labels = consumptionData.slice(0, 10).map((item) => item.itemName); // Top 10
 		const quantities = consumptionData.slice(0, 10).map((item) => item.totalQuantity);
-		const revenues = consumptionData.slice(0, 10).map((item) => item.totalRevenue);
 
 		const colors = ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40', '#FF6384', '#C9CBCF', '#4BC0C0', '#FF6384'];
 

@@ -1,8 +1,6 @@
-import React, { useState, useContext, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
 import { ProductProvider, useProduct, Item, ItemVariant, Category } from '../../context/ProductContext';
 import { usePersistentCart } from '../../context/PersistentCartContext';
-import { ThemeContext } from '../../App';
 import * as MdIcons from 'react-icons/md';
 import CartModal from '../../components/modals/CartModal.component';
 import styles from './order.module.css';
@@ -87,8 +85,6 @@ const VariantItem: React.FC<VariantItemProps> = ({ item, variant, currentQuantit
 const OrderContent: React.FC<OrderContentProps> = ({ selectedCategoryId: propCategoryId }) => {
 	const productCtx = useProduct();
 	const cart = usePersistentCart();
-	const navigate = useNavigate();
-	const { theme } = useContext(ThemeContext);
 	const [internalCategoryId, setInternalCategoryId] = useState<number | null>(null);
 	const [isCartModalOpen, setIsCartModalOpen] = useState(false);
 
@@ -135,10 +131,6 @@ const OrderContent: React.FC<OrderContentProps> = ({ selectedCategoryId: propCat
 	const handleVariantRemove = (item: Item, variant: ItemVariant) => {
 		const itemId = `${item.id}-${variant.id}`;
 		cart.decreaseQuantity(itemId);
-	};
-
-	const handleGoToBilling = () => {
-		navigate('/billing');
 	};
 
 	const handleCheckout = () => {

@@ -80,7 +80,6 @@ const ServiceContent: React.FC = () => {
 	// Detect touchscreen and screen size for adaptive sidebar behavior
 	const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 	const isSmallScreen = window.innerWidth <= 1024;
-	const isLandscapeTouch = isTouchDevice && window.innerWidth > window.innerHeight;
 
 	// Adaptive collapsed state: collapsed on touch devices or small screens
 	const shouldAutoCollapse = isTouchDevice || isSmallScreen;
@@ -187,15 +186,6 @@ const ServiceContent: React.FC = () => {
 			</li>
 		);
 	};
-
-	const renderPlaceholderContent = (title: string) => (
-		<div className={style.placeholder}>
-			<h2>{title}</h2>
-			<p>
-				{title} {TEXT_LABELS.COMING_SOON}.
-			</p>
-		</div>
-	);
 
 	if (!productCtx) {
 		return (

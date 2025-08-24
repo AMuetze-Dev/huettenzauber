@@ -87,7 +87,7 @@ export const BillProvider: React.FC<{ children: React.ReactNode }> = ({ children
 		void (async () => {
 			await reloadBills();
 		})();
-	}, []);
+	}, [reloadBills]);
 
 	return (
 		<BillContext.Provider

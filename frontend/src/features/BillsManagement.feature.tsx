@@ -20,7 +20,7 @@ const BillsManagement: React.FC<BillsManagementProps> = () => {
 				console.log('First item details:', bills[0].items[0]);
 			}
 		}
-	}, [reloadBills]);
+	}, [reloadBills, bills]);
 
 	const getItemVariant = (variantId: number): ItemVariant | undefined => {
 		for (const item of items) {
