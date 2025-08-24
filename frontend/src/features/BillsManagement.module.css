@@ -145,10 +145,11 @@
   background: linear-gradient(135deg, var(--background-secondary) 0%, var(--background) 100%);
   border: 1px solid var(--border);
   border-radius: 16px;
-  overflow: hidden;
+  overflow: visible; /* Geändert von hidden zu visible für Details */
   transition: all 200ms ease;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   position: relative;
+  z-index: 1; /* Base z-index für alle Cards */
 }
 
 .billCard::before {
@@ -166,6 +167,7 @@
   transform: translateY(-4px);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
   border-color: var(--accent);
+  z-index: 10; /* Höherer z-index beim Hover */
 }
 
 /* Deleted Bill Styling */
@@ -206,16 +208,10 @@
 }
 
 .billInfo h3 {
-  margin: 0 0 var(--spacing-xs) 0;
+  margin: 0;
   color: var(--text);
   font-size: clamp(1.1rem, 2.5vw, 1.3rem);
   font-weight: 700;
-}
-
-.billDate {
-  color: var(--text-secondary);
-  font-size: clamp(0.8rem, 1.8vw, 0.9rem);
-  margin: 0;
 }
 
 .billTotals {
@@ -230,12 +226,6 @@
   background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
   -webkit-background-clip: text;
   background-clip: text;
-}
-
-.itemCount {
-  font-size: clamp(0.8rem, 1.8vw, 0.9rem);
-  color: var(--text-secondary);
-  margin: var(--spacing-xs) 0 0 0;
 }
 
 /* Bill Actions */
@@ -308,6 +298,10 @@
   padding: var(--spacing-lg);
   background: linear-gradient(135deg, var(--background) 0%, var(--background-secondary) 100%);
   border-top: 1px solid var(--border);
+  border-radius: 0 0 16px 16px; /* Runde Ecken unten */
+  position: relative;
+  z-index: 15; /* Höchster z-index für Details */
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1); /* Schatten für bessere Abgrenzung */
 }
 
 .itemsGrid {

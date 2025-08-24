@@ -64,7 +64,6 @@ class BillItem(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     item_quantity = Column(Float)
-    item_price = Column(Float, nullable=False)  # Preis zum Zeitpunkt der Bestellung
 
     bill = relationship("Bill", back_populates="items")
 

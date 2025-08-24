@@ -12,14 +12,6 @@ const BillsManagement: React.FC<BillsManagementProps> = () => {
 
 	useEffect(() => {
 		reloadBills();
-		// Debug: Ausgabe der geladenen Bills
-		console.log('Bills loaded:', bills);
-		if (bills.length > 0) {
-			console.log('First bill items:', bills[0].items);
-			if (bills[0].items.length > 0) {
-				console.log('First item details:', bills[0].items[0]);
-			}
-		}
 	}, [reloadBills, bills]);
 
 	const getItemVariant = (variantId: number): ItemVariant | undefined => {
@@ -43,7 +35,6 @@ const BillsManagement: React.FC<BillsManagementProps> = () => {
 		// Fallback: Preis aus der aktuellen ItemVariant
 		const variant = getItemVariant(billItem.item_variant_id);
 		if (variant && variant.price !== undefined && variant.price !== null && !isNaN(variant.price)) {
-			console.log(`Using variant price for variant ${billItem.item_variant_id}: ${variant.price} (no stored price available)`);
 			return variant.price;
 		}
 
@@ -75,16 +66,6 @@ const BillsManagement: React.FC<BillsManagementProps> = () => {
 			style: 'currency',
 			currency: 'EUR',
 		}).format(amount);
-	};
-
-	const formatDate = (dateString: string): string => {
-		return new Date(dateString).toLocaleDateString('de-DE', {
-			year: 'numeric',
-			month: '2-digit',
-			day: '2-digit',
-			hour: '2-digit',
-			minute: '2-digit',
-		});
 	};
 
 	const calculateBillTotal = (bill: any): number => {
@@ -146,14 +127,10 @@ const BillsManagement: React.FC<BillsManagementProps> = () => {
 											Rechnung #{bill.id}
 											{bill.is_deleted && <span className={styles.deletedLabel}>GELÖSCHT</span>}
 										</h3>
-										<p className={styles.billDate}>{formatDate(bill.date)}</p>
 									</div>
 
 									<div className={styles.billTotals}>
 										<div className={styles.totalAmount}>{formatCurrency(calculateBillTotal(bill))}</div>
-										<div className={styles.itemCount}>
-											{bill.items.length} {bill.items.length === 1 ? 'Artikel' : 'Artikel'}
-										</div>
 									</div>
 
 									<div className={styles.billActions}>

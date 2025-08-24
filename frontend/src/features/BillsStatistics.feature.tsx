@@ -250,22 +250,6 @@ const BillsStatistics: React.FC<BillsStatisticsProps> = () => {
 					</div>
 
 					<div className={styles.chartContainer}>{chartType === 'bar' ? <Bar data={chartData} options={chartOptions} /> : <Pie data={chartData} options={chartOptions} />}</div>
-
-					{/* Chart Legende/Zusatzinfo */}
-					<div className={styles.chartLegend}>
-						<h3>Top 10 meist verkaufte Artikel</h3>
-						<div className={styles.legendGrid}>
-							{consumptionData.slice(0, 10).map((item, index) => (
-								<div key={item.itemId} className={styles.legendItem}>
-									<span className={styles.legendRank}>#{index + 1}</span>
-									<span className={styles.legendName}>{item.itemName}</span>
-									<span className={styles.legendValue}>
-										{formatQuantity(item.totalQuantity)} · {formatCurrency(item.totalRevenue)}
-									</span>
-								</div>
-							))}
-						</div>
-					</div>
 				</div>
 			)}
 		</div>

@@ -40,8 +40,7 @@ def create(db: Session, bill_date: date, items: list[dict]):
             bill_item = BillItem(
                 bill_id=bill.id,
                 item_variant_id=item["item_variant_id"],
-                item_quantity=quantity,
-                item_price=variant.price
+                item_quantity=quantity
             )
             db.add(bill_item)
         
