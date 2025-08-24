@@ -3,6 +3,7 @@ import style from './service.module.css';
 import * as MdIcons from 'react-icons/md';
 import Settings from '../../features/Settings.feature';
 import BillsManagement from '../../features/BillsManagement.feature';
+import BillsStatistics from '../../features/BillsStatistics.feature';
 import { ProductProvider, useProduct } from '../../context/ProductContext';
 import { BillProvider } from '../../context/BillContext';
 import { ThemeContext } from '../../App';
@@ -250,7 +251,7 @@ const ServiceContent: React.FC = () => {
 					{activeSection === 'category' && <OrderPage selectedCategoryId={selectedCategoryId} onCategoryChange={handleCategorySelect} />}
 					{activeSection === 'einstellungen' && <Settings />}
 					{activeSection === 'lagerbestand' && <BillsManagement />}
-					{activeSection === 'statistik' && renderPlaceholderContent('Statistik')}
+					{activeSection === 'statistik' && <BillsStatistics />}
 				</div>
 			</main>
 		</div>
