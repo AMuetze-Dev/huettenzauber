@@ -1,0 +1,320 @@
+/* === BILLS MANAGEMENT - MINIMAL 3-COLOR DESIGN === */
+
+/* Page Layout */
+.pageLayout {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-background);
+  padding: var(--spacing-lg);
+  box-sizing: border-box;
+}
+
+.pageHeader {
+  margin-bottom: var(--spacing-lg);
+  padding-bottom: var(--spacing-md);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.pageTitle {
+  font-size: var(--fs-300);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-primary);
+  margin: 0 0 var(--spacing-xs) 0;
+}
+
+.pageSubtitle {
+  font-size: var(--fs-150);
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+/* Bills Management Container */
+.billsManagement {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Controls Header */
+.controlsHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-lg);
+  padding: var(--spacing-md);
+  background: var(--color-background);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-md);
+}
+
+.toggleControls {
+  display: flex;
+  align-items: center;
+}
+
+.toggleLabel {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  cursor: pointer;
+  font-size: var(--fs-200);
+  color: var(--color-text-primary);
+}
+
+.toggleCheckbox {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--color-accent);
+  cursor: pointer;
+}
+
+.statsInfo {
+  color: var(--color-text-secondary);
+  font-size: var(--fs-150);
+}
+
+.billCount {
+  font-weight: var(--font-weight-medium);
+}
+
+/* Bills List */
+.billsList {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  
+  gap: var(--spacing-md);
+  padding-right: var(--spacing-xs); /* Space for scrollbar */
+}
+
+/* Empty State */
+.emptyState {
+  text-align: center;
+  padding: var(--spacing-xl);
+  color: var(--color-text-secondary);
+}
+
+.emptyState h3 {
+  margin: 0 0 var(--spacing-sm) 0;
+  color: var(--color-text-primary);
+}
+
+.emptyState p {
+  margin: 0;
+}
+
+/* Bill Card */
+.billCard {
+  background: var(--color-background);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-lg);
+  overflow: hidden;
+  transition: opacity 200ms ease;
+}
+
+.billCard:hover {
+  opacity: 0.9;
+}
+
+/* Deleted Bill Styling */
+.deletedBill {
+  opacity: 0.6;
+  border-color: #f44336;
+  background: rgba(244, 67, 54, 0.05);
+}
+
+.deletedBill .billHeader {
+  background: rgba(244, 67, 54, 0.1);
+}
+
+.deletedLabel {
+  display: inline-block;
+  background: #f44336;
+  color: white;
+  padding: 2px var(--spacing-xs);
+  border-radius: var(--border-radius-sm);
+  font-size: var(--fs-75);
+  font-weight: var(--font-weight-bold);
+  margin-left: var(--spacing-sm);
+}
+
+/* Bill Header */
+.billHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-md);
+  background: var(--color-background);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.billInfo h3 {
+  margin: 0 0 var(--spacing-xs) 0;
+  color: var(--color-text-primary);
+  font-size: var(--fs-200);
+  font-weight: var(--font-weight-semibold);
+}
+
+.billDate {
+  color: var(--color-text-secondary);
+  font-size: var(--fs-100);
+  margin: 0;
+}
+
+.billTotals {
+  text-align: right;
+}
+
+.totalAmount {
+  font-size: var(--fs-250);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-accent);
+  margin: 0;
+}
+
+.itemCount {
+  font-size: var(--fs-100);
+  color: var(--color-text-secondary);
+  margin: var(--spacing-xs) 0 0 0;
+}
+
+/* Bill Actions */
+.billActions {
+  display: flex;
+  gap: var(--spacing-sm);
+  align-items: center;
+}
+
+.detailsButton,
+.deleteButton {
+  background: none;
+  border: 1px solid var(--color-border);
+  color: var(--color-text-primary);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--border-radius-sm);
+  cursor: pointer;
+  font-size: var(--fs-100);
+  transition: all 200ms ease;
+  min-width: var(--touch-target-minimum);
+  min-height: calc(var(--touch-target-minimum) - 10px);
+}
+
+.detailsButton:hover {
+  background: var(--color-accent);
+  color: var(--color-text-primary);
+  border-color: var(--color-accent);
+}
+
+.deleteButton {
+  border-color: #f44336;
+  color: #f44336;
+}
+
+.deleteButton:hover {
+  background: rgba(244, 67, 54, 0.1);
+}
+
+/* Bill Details */
+.billDetails {
+  padding: var(--spacing-md);
+  background: var(--color-background);
+  border-top: 1px solid var(--color-border);
+}
+
+.itemsGrid {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.gridHeader {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-xs) 0;
+  border-bottom: 1px solid var(--color-border);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  font-size: var(--fs-100);
+  text-align: right;
+}
+
+.gridHeader > span:nth-child(1) {
+  text-align: left;
+}
+
+.billItem {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-xs) 0;
+  border-bottom: 1px solid var(--color-border);
+  font-size: var(--fs-100);
+  color: var(--color-text-primary);
+}
+
+.billItem:last-child {
+  border-bottom: none;
+}
+
+.itemName {
+  font-weight: var(--font-weight-medium);
+}
+
+.itemQuantity,
+.itemPrice,
+.itemTotal {
+  text-align: right;
+}
+
+/* === RESPONSIVE DESIGN === */
+
+/* Mobile Portrait */
+@media (max-width: 428px) {
+  .pageLayout {
+    padding: var(--spacing-sm);
+  }
+  
+  .controlsHeader {
+    flex-direction: column;
+    gap: var(--spacing-sm);
+    text-align: center;
+  }
+  
+  .billHeader {
+    flex-direction: column;
+    gap: var(--spacing-sm);
+    text-align: center;
+  }
+  
+  .billActions {
+    justify-content: center;
+  }
+  
+  .gridHeader,
+  .billItem {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-xs);
+    text-align: left;
+  }
+  
+  .itemQuantity,
+  .itemPrice,
+  .itemTotal {
+    text-align: left;
+  }
+}
+
+/* Tablet and Desktop */
+@media (min-width: 768px) {
+  .pageLayout {
+    padding: var(--spacing-xl);
+  }
+  
+  .billsList {
+    gap: var(--spacing-lg);
+  }
+}
