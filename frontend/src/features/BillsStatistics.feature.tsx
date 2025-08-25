@@ -3,6 +3,10 @@ import { useBill } from '../context/BillContext';
 import { useProduct } from '../context/ProductContext';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement } from 'chart.js';
 import { Bar, Pie } from 'react-chartjs-2';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
 import styles from './BillsStatistics.module.css';
 
 // Chart.js registrieren
@@ -170,6 +174,169 @@ const BillsStatistics: React.FC<BillsStatisticsProps> = () => {
 		}).format(quantity);
 	};
 
+	// Export-Funktionen für Statistiken
+	const exportStatisticsToPDF = useCallback(() => {
+		const doc = new jsPDF();
+
+		// Titel mit Branding-Farbe
+		doc.setFontSize(20);
+		doc.setTextColor(244, 184, 3); // Accent color #f4b803
+		doc.text('Verbrauchsstatistiken', 20, 20);
+
+		// Datum
+		doc.setFontSize(10);
+		doc.setTextColor(0, 0, 0); // Zurück zu schwarz
+		doc.text(`Exportiert am: ${new Date().toLocaleDateString('de-DE')}`, 20, 30);
+
+		// Tabellendaten vorbereiten
+		const tableData: any[] = [];
+
+		consumptionData.forEach((item, index) => {
+			// Hauptartikel - mit bill_steps berücksichtigen
+			const itemInfo = items.find((i) => i.name === item.itemName);
+			const totalDisplayQuantity = item.variantDetails.reduce((sum, variant) => {
+				const variantInfo = itemInfo?.item_variants?.find((v) => v.name === variant.variantName || (variant.variantName === 'Standard' && (!v.name || v.name === 'Standard')));
+				const billSteps = variantInfo?.bill_steps || 1;
+				return sum + variant.quantity * billSteps;
+			}, 0);
+
+			tableData.push([`#${index + 1}`, item.itemName, '', formatQuantity(totalDisplayQuantity), formatCurrency(item.totalRevenue)]);
+
+			// Varianten (falls vorhanden)
+			if (item.variantDetails.length > 1) {
+				item.variantDetails
+					.sort((a, b) => b.quantity - a.quantity)
+					.forEach((variant) => {
+						const variantInfo = itemInfo?.item_variants?.find((v) => v.name === variant.variantName || (variant.variantName === 'Standard' && (!v.name || v.name === 'Standard')));
+						const billSteps = variantInfo?.bill_steps || 1;
+						const displayQuantity = variant.quantity * billSteps;
+
+						tableData.push(['', '', `  - ${variant.variantName}`, formatQuantity(displayQuantity), formatCurrency(variant.revenue)]);
+					});
+			}
+		});
+
+		// AutoTable mit Branding-Farben
+		autoTable(doc, {
+			head: [['Rang', 'Artikel', 'Variante', 'Menge', 'Umsatz']],
+			body: tableData,
+			startY: 40,
+			styles: {
+				fontSize: 8,
+				cellPadding: 2,
+			},
+			headStyles: {
+				fillColor: [244, 184, 3], // Accent color #f4b803
+				textColor: [0, 0, 0], // Schwarz für bessere Lesbarkeit auf gelbem Hintergrund
+				fontStyle: 'bold',
+			},
+			bodyStyles: {
+				textColor: [0, 0, 0],
+			},
+			alternateRowStyles: {
+				fillColor: [249, 250, 251], // Sehr helles Grau für abwechselnde Zeilen
+			},
+		});
+
+		doc.save('verbrauchsstatistiken.pdf');
+	}, [consumptionData, formatCurrency, formatQuantity, items]);
+
+	const exportStatisticsToExcel = useCallback(() => {
+		const data: any[] = [];
+
+		consumptionData.forEach((item, index) => {
+			// Hauptartikel - mit bill_steps berücksichtigen
+			const itemInfo = items.find((i) => i.name === item.itemName);
+			const totalDisplayQuantity = item.variantDetails.reduce((sum, variant) => {
+				const variantInfo = itemInfo?.item_variants?.find((v) => v.name === variant.variantName || (variant.variantName === 'Standard' && (!v.name || v.name === 'Standard')));
+				const billSteps = variantInfo?.bill_steps || 1;
+				return sum + variant.quantity * billSteps;
+			}, 0);
+
+			data.push({
+				Rang: `#${index + 1}`,
+				Artikel: item.itemName,
+				Variante: '',
+				Menge: totalDisplayQuantity,
+				Umsatz: item.totalRevenue,
+			});
+
+			// Varianten (falls vorhanden)
+			if (item.variantDetails.length > 1) {
+				item.variantDetails
+					.sort((a, b) => b.quantity - a.quantity)
+					.forEach((variant) => {
+						const variantInfo = itemInfo?.item_variants?.find((v) => v.name === variant.variantName || (variant.variantName === 'Standard' && (!v.name || v.name === 'Standard')));
+						const billSteps = variantInfo?.bill_steps || 1;
+						const displayQuantity = variant.quantity * billSteps;
+
+						data.push({
+							Rang: '',
+							Artikel: '',
+							Variante: variant.variantName,
+							Menge: displayQuantity,
+							Umsatz: variant.revenue,
+						});
+					});
+			}
+		});
+
+		const ws = XLSX.utils.json_to_sheet(data);
+		const wb = XLSX.utils.book_new();
+		XLSX.utils.book_append_sheet(wb, ws, 'Verbrauchsstatistiken');
+
+		// Excel-Datei erstellen und herunterladen
+		const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+		const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+		saveAs(blob, 'verbrauchsstatistiken.xlsx');
+	}, [consumptionData, items]);
+
+	const exportStatisticsToCSV = useCallback(() => {
+		const data: any[] = [];
+
+		consumptionData.forEach((item, index) => {
+			// Hauptartikel - mit bill_steps berücksichtigen
+			const itemInfo = items.find((i) => i.name === item.itemName);
+			const totalDisplayQuantity = item.variantDetails.reduce((sum, variant) => {
+				const variantInfo = itemInfo?.item_variants?.find((v) => v.name === variant.variantName || (variant.variantName === 'Standard' && (!v.name || v.name === 'Standard')));
+				const billSteps = variantInfo?.bill_steps || 1;
+				return sum + variant.quantity * billSteps;
+			}, 0);
+
+			data.push({
+				Rang: `#${index + 1}`,
+				Artikel: item.itemName,
+				Variante: '',
+				Menge: totalDisplayQuantity,
+				Umsatz: item.totalRevenue,
+			});
+
+			// Varianten (falls vorhanden)
+			if (item.variantDetails.length > 1) {
+				item.variantDetails
+					.sort((a, b) => b.quantity - a.quantity)
+					.forEach((variant) => {
+						const variantInfo = itemInfo?.item_variants?.find((v) => v.name === variant.variantName || (variant.variantName === 'Standard' && (!v.name || v.name === 'Standard')));
+						const billSteps = variantInfo?.bill_steps || 1;
+						const displayQuantity = variant.quantity * billSteps;
+
+						data.push({
+							Rang: '',
+							Artikel: '',
+							Variante: variant.variantName,
+							Menge: displayQuantity,
+							Umsatz: variant.revenue,
+						});
+					});
+			}
+		});
+
+		const ws = XLSX.utils.json_to_sheet(data);
+		const csv = XLSX.utils.sheet_to_csv(ws);
+		const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+		saveAs(blob, 'verbrauchsstatistiken.csv');
+	}, [consumptionData, items]);
+
 	return (
 		<div className={styles.pageLayout}>
 			<header className={styles.pageHeader}>
@@ -185,6 +352,22 @@ const BillsStatistics: React.FC<BillsStatisticsProps> = () => {
 				<button className={`${styles.viewButton} ${activeView === 'charts' ? styles.active : ''}`} onClick={() => setActiveView('charts')}>
 					📈 Grafische Auswertung
 				</button>
+			</div>
+
+			{/* Export Controls */}
+			<div className={styles.exportSection}>
+				<h3>Daten exportieren</h3>
+				<div className={styles.exportControls}>
+					<button onClick={exportStatisticsToPDF} className={styles.exportButton}>
+						📄 PDF Export
+					</button>
+					<button onClick={exportStatisticsToExcel} className={styles.exportButton}>
+						📊 Excel Export
+					</button>
+					<button onClick={exportStatisticsToCSV} className={styles.exportButton}>
+						📋 CSV Export
+					</button>
+				</div>
 			</div>
 
 			{/* Verbrauchsübersicht */}

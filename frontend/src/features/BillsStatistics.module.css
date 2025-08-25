@@ -104,6 +104,80 @@
 	transform: scale(0.95);
 }
 
+/* ===== EXPORT SECTION ===== */
+.exportSection {
+	background-color: var(--background-secondary);
+	padding: var(--spacing-md);
+	border-radius: 16px;
+	border: 1px solid var(--border);
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+	margin-bottom: var(--spacing-lg);
+	flex-shrink: 0;
+	text-align: center;
+}
+
+.exportSection h3 {
+	font-size: clamp(1.1rem, 2.5vw, 1.3rem);
+	font-weight: 600;
+	color: var(--text);
+	margin-bottom: var(--spacing-sm);
+	background: linear-gradient(135deg, var(--accent) 0%, var(--text) 100%);
+	-webkit-background-clip: text;
+	background-clip: text;
+}
+
+.exportControls {
+	display: flex;
+	gap: var(--spacing-sm);
+	justify-content: center;
+	flex-wrap: wrap;
+}
+
+.exportButton {
+	min-height: 48px;
+	min-width: 48px;
+	padding: var(--spacing-sm) var(--spacing-md);
+	background: linear-gradient(135deg, var(--background) 0%, var(--background-secondary) 100%);
+	border: 2px solid var(--border);
+	color: var(--text);
+	border-radius: 12px;
+	cursor: pointer;
+	font-size: clamp(0.8rem, 1.8vw, 0.9rem);
+	font-weight: 600;
+	transition: all 200ms ease;
+	position: relative;
+	overflow: hidden;
+	touch-action: manipulation;
+	-webkit-tap-highlight-color: transparent;
+}
+
+.exportButton::before {
+	content: '';
+	position: absolute;
+	top: 0;
+	left: -100%;
+	width: 100%;
+	height: 100%;
+	background: linear-gradient(90deg, transparent, var(--accent-light), transparent);
+	transition: left 0.5s;
+}
+
+.exportButton:hover::before {
+	left: 100%;
+}
+
+.exportButton:hover {
+	background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
+	color: var(--text-on-accent);
+	border-color: var(--accent);
+	transform: translateY(-2px);
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.exportButton:active {
+	transform: scale(0.95);
+}
+
 /* ===== CONSUMPTION VIEW ===== */
 .consumptionView {
 	max-width: 1200px;
@@ -472,5 +546,15 @@
 
 	.viewButton {
 		width: 100%;
+	}
+
+	.exportControls {
+		flex-direction: column;
+		align-items: center;
+	}
+
+	.exportButton {
+		width: 100%;
+		max-width: 200px;
 	}
 }

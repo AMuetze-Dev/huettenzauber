@@ -1,6 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useBill } from '../context/BillContext';
 import { ItemVariant, useProduct } from '../context/ProductContext';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
 import styles from './BillsManagement.module.css';
 
 interface BillsManagementProps {}
@@ -86,6 +90,380 @@ const BillsManagement: React.FC<BillsManagementProps> = () => {
 		setSelectedBill(selectedBill === billId ? null : billId);
 	};
 
+	// Export-Funktionen
+	const exportToPDF = useCallback(() => {
+		const doc = new jsPDF();
+
+		// Titel mit Branding-Farbe
+		doc.setFontSize(20);
+		doc.setTextColor(244, 184, 3); // Accent color #f4b803
+		doc.text('Rechnungsübersicht', 20, 20);
+
+		// Datum
+		doc.setFontSize(10);
+		doc.setTextColor(0, 0, 0); // Zurück zu schwarz
+		doc.text(`Exportiert am: ${new Date().toLocaleDateString('de-DE')}`, 20, 30);
+
+		// Tabellendaten vorbereiten
+		const tableData: any[] = [];
+		let grandTotal = 0;
+		let deletedTotal = 0;
+
+		bills.forEach((bill) => {
+			let billTotal = 0;
+
+			bill.items.forEach((item: any, index: number) => {
+				const itemName = getItemName(item.item_variant_id);
+				const itemPrice = getItemPrice(item);
+				const itemVariant = getItemVariant(item.item_variant_id);
+				const billSteps = itemVariant?.bill_steps || 1;
+				const displayQuantity = item.item_quantity * billSteps;
+				const itemTotal = itemPrice * item.item_quantity;
+				billTotal += itemTotal;
+
+				const row = [
+					index === 0 ? `#${bill.id}` : '', // Rechnungsnummer nur bei erstem Item
+					index === 0 ? new Date(bill.date).toLocaleDateString('de-DE') : '',
+					itemName,
+					displayQuantity.toString(),
+					`${itemPrice.toFixed(2)} €`,
+					`${itemTotal.toFixed(2)} €`,
+					index === 0 && bill.is_deleted ? 'GELÖSCHT' : '', // Gelöscht-Status
+				];
+
+				tableData.push(row);
+			});
+
+			// Gesamtsumme für die Rechnung
+			const totalRow = ['', '', `GESAMT${bill.is_deleted ? ' (GELÖSCHT)' : ''}:`, '', '', `${billTotal.toFixed(2)} €`, ''];
+			tableData.push(totalRow);
+
+			// Leerzeile zwischen Rechnungen
+			const separatorRow = ['', '', '', '', '', '', ''];
+			tableData.push(separatorRow);
+
+			// Zu Gesamtsummen hinzufügen
+			if (bill.is_deleted) {
+				deletedTotal += billTotal;
+			} else {
+				grandTotal += billTotal;
+			}
+		});
+
+		// Zusammenfassung am Ende
+		tableData.push(['', '', '═══════════════', '', '', '', '']);
+		tableData.push(['', '', 'ZUSAMMENFASSUNG:', '', '', '', '']);
+		tableData.push(['', '', 'Gültige Rechnungen:', '', '', `${grandTotal.toFixed(2)} €`, '']);
+		if (deletedTotal > 0) {
+			tableData.push(['', '', 'Gelöschte Rechnungen:', '', '', `${deletedTotal.toFixed(2)} €`, '']);
+		}
+		tableData.push(['', '', 'GESAMTUMSATZ:', '', '', `${(grandTotal + deletedTotal).toFixed(2)} €`, '']);
+
+		// Header
+		const headers = ['Rechnung #', 'Datum', 'Artikel', 'Menge', 'Einzelpreis', 'Gesamt', 'Status'];
+
+		// AutoTable mit Branding-Farben
+		autoTable(doc, {
+			head: [headers],
+			body: tableData,
+			startY: 40,
+			styles: {
+				fontSize: 8,
+				cellPadding: 2,
+			},
+			headStyles: {
+				fillColor: [244, 184, 3], // Accent color #f4b803
+				textColor: [0, 0, 0], // Schwarz für bessere Lesbarkeit auf gelbem Hintergrund
+				fontStyle: 'bold',
+			},
+			bodyStyles: {
+				textColor: [0, 0, 0],
+			},
+			alternateRowStyles: {
+				fillColor: [249, 250, 251], // Sehr helles Grau für abwechselnde Zeilen
+			},
+			didParseCell: function (data) {
+				// Gelöschte Rechnungen rot hervorheben
+				if (data.cell.text.length > 0 && (data.cell.text[0].includes('GELÖSCHT') || data.cell.text[0] === 'GELÖSCHT')) {
+					data.cell.styles.fillColor = [220, 53, 69]; // Rot für gelöschte Einträge
+					data.cell.styles.textColor = [255, 255, 255]; // Weißer Text auf rotem Hintergrund
+					data.cell.styles.fontStyle = 'bold';
+				}
+				// Zeilen mit gelöschten Rechnungen komplett rot hervorheben
+				bills.forEach((bill) => {
+					if (bill.is_deleted && data.row.index < tableData.length) {
+						const rowData = tableData[data.row.index];
+						if (rowData[0] === `#${bill.id}` || (rowData[2] && rowData[2].includes('GELÖSCHT'))) {
+							data.cell.styles.fillColor = [254, 243, 199]; // Helles Rot-Orange für gelöschte Rechnungszeilen
+							if (data.cell.text[0] === 'GELÖSCHT') {
+								data.cell.styles.fillColor = [220, 53, 69]; // Dunkelrot für Status-Spalte
+								data.cell.styles.textColor = [255, 255, 255];
+								data.cell.styles.fontStyle = 'bold';
+							}
+						}
+					}
+				});
+			},
+		});
+
+		doc.save('rechnungsuebersicht.pdf');
+	}, [bills, getItemName, getItemPrice, getItemVariant]);
+
+	const exportToExcel = useCallback(() => {
+		const data: any[] = [];
+		let grandTotal = 0;
+		let deletedTotal = 0;
+
+		bills.forEach((bill) => {
+			let billTotal = 0;
+
+			bill.items.forEach((item: any, index: number) => {
+				const itemName = getItemName(item.item_variant_id);
+				const itemPrice = getItemPrice(item);
+				const itemVariant = getItemVariant(item.item_variant_id);
+				const billSteps = itemVariant?.bill_steps || 1;
+				const displayQuantity = item.item_quantity * billSteps;
+				const itemTotal = itemPrice * item.item_quantity;
+				billTotal += itemTotal;
+
+				const row: any = {
+					'Rechnung #': index === 0 ? `#${bill.id}` : '',
+					Datum: index === 0 ? new Date(bill.date).toLocaleDateString('de-DE') : '',
+					Artikel: itemName,
+					Menge: displayQuantity,
+					Einzelpreis: itemPrice,
+					Gesamt: itemTotal,
+					Status: index === 0 && bill.is_deleted ? 'GELÖSCHT' : '',
+				};
+
+				data.push(row);
+			});
+
+			// Gesamtsumme für die Rechnung
+			const totalRow: any = {
+				'Rechnung #': '',
+				Datum: '',
+				Artikel: `GESAMT${bill.is_deleted ? ' (GELÖSCHT)' : ''}:`,
+				Menge: '',
+				Einzelpreis: '',
+				Gesamt: billTotal,
+				Status: '',
+			};
+			data.push(totalRow);
+
+			// Leerzeile zwischen Rechnungen
+			const separatorRow: any = {
+				'Rechnung #': '',
+				Datum: '',
+				Artikel: '',
+				Menge: '',
+				Einzelpreis: '',
+				Gesamt: '',
+				Status: '',
+			};
+			data.push(separatorRow);
+
+			// Zu Gesamtsummen hinzufügen
+			if (bill.is_deleted) {
+				deletedTotal += billTotal;
+			} else {
+				grandTotal += billTotal;
+			}
+		});
+
+		// Zusammenfassung am Ende
+		data.push({
+			'Rechnung #': '',
+			Datum: '',
+			Artikel: '═══════════════',
+			Menge: '',
+			Einzelpreis: '',
+			Gesamt: '',
+			Status: '',
+		});
+		data.push({
+			'Rechnung #': '',
+			Datum: '',
+			Artikel: 'ZUSAMMENFASSUNG:',
+			Menge: '',
+			Einzelpreis: '',
+			Gesamt: '',
+			Status: '',
+		});
+		data.push({
+			'Rechnung #': '',
+			Datum: '',
+			Artikel: 'Gültige Rechnungen:',
+			Menge: '',
+			Einzelpreis: '',
+			Gesamt: grandTotal,
+			Status: '',
+		});
+		if (deletedTotal > 0) {
+			data.push({
+				'Rechnung #': '',
+				Datum: '',
+				Artikel: 'Gelöschte Rechnungen:',
+				Menge: '',
+				Einzelpreis: '',
+				Gesamt: deletedTotal,
+				Status: '',
+			});
+		}
+		data.push({
+			'Rechnung #': '',
+			Datum: '',
+			Artikel: 'GESAMTUMSATZ:',
+			Menge: '',
+			Einzelpreis: '',
+			Gesamt: grandTotal + deletedTotal,
+			Status: '',
+		});
+
+		const ws = XLSX.utils.json_to_sheet(data);
+
+		// Spaltenbreiten definieren
+		const colWidths = [
+			{ wch: 12 }, // Rechnung #
+			{ wch: 12 }, // Datum
+			{ wch: 30 }, // Artikel
+			{ wch: 8 }, // Menge
+			{ wch: 12 }, // Einzelpreis
+			{ wch: 12 }, // Gesamt
+			{ wch: 12 }, // Status
+		];
+		ws['!cols'] = colWidths;
+
+		// Styling für gelöschte Rechnungen (rote Hintergrundfarbe)
+		// Excel-spezifische Styles können über XLSX begrenzt angewendet werden
+		// Für vollständige Formatierung würden wir eine erweiterte Library benötigen
+
+		const wb = XLSX.utils.book_new();
+		XLSX.utils.book_append_sheet(wb, ws, 'Rechnungen');
+
+		// Excel-Datei erstellen und herunterladen
+		const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+		const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+		saveAs(blob, 'rechnungsuebersicht.xlsx');
+	}, [bills, getItemName, getItemPrice, getItemVariant]);
+
+	const exportToCSV = useCallback(() => {
+		const data: any[] = [];
+		let grandTotal = 0;
+		let deletedTotal = 0;
+
+		bills.forEach((bill) => {
+			let billTotal = 0;
+
+			bill.items.forEach((item: any, index: number) => {
+				const itemName = getItemName(item.item_variant_id);
+				const itemPrice = getItemPrice(item);
+				const itemVariant = getItemVariant(item.item_variant_id);
+				const billSteps = itemVariant?.bill_steps || 1;
+				const displayQuantity = item.item_quantity * billSteps;
+				const itemTotal = itemPrice * item.item_quantity;
+				billTotal += itemTotal;
+
+				const row: any = {
+					'Rechnung #': index === 0 ? `#${bill.id}` : '',
+					Datum: index === 0 ? new Date(bill.date).toLocaleDateString('de-DE') : '',
+					Artikel: itemName,
+					Menge: displayQuantity,
+					Einzelpreis: itemPrice,
+					Gesamt: itemTotal,
+					Status: index === 0 && bill.is_deleted ? 'GELÖSCHT' : '',
+				};
+
+				data.push(row);
+			});
+
+			// Gesamtsumme für die Rechnung
+			const totalRow: any = {
+				'Rechnung #': '',
+				Datum: '',
+				Artikel: `GESAMT${bill.is_deleted ? ' (GELÖSCHT)' : ''}:`,
+				Menge: '',
+				Einzelpreis: '',
+				Gesamt: billTotal,
+				Status: '',
+			};
+			data.push(totalRow);
+
+			// Leerzeile zwischen Rechnungen
+			const separatorRow: any = {
+				'Rechnung #': '',
+				Datum: '',
+				Artikel: '',
+				Menge: '',
+				Einzelpreis: '',
+				Gesamt: '',
+				Status: '',
+			};
+			data.push(separatorRow);
+
+			// Zu Gesamtsummen hinzufügen
+			if (bill.is_deleted) {
+				deletedTotal += billTotal;
+			} else {
+				grandTotal += billTotal;
+			}
+		});
+
+		// Zusammenfassung am Ende
+		data.push({
+			'Rechnung #': '',
+			Datum: '',
+			Artikel: '═══════════════',
+			Menge: '',
+			Einzelpreis: '',
+			Gesamt: '',
+			Status: '',
+		});
+		data.push({
+			'Rechnung #': '',
+			Datum: '',
+			Artikel: 'ZUSAMMENFASSUNG:',
+			Menge: '',
+			Einzelpreis: '',
+			Gesamt: '',
+			Status: '',
+		});
+		data.push({
+			'Rechnung #': '',
+			Datum: '',
+			Artikel: 'Gültige Rechnungen:',
+			Menge: '',
+			Einzelpreis: '',
+			Gesamt: grandTotal,
+			Status: '',
+		});
+		if (deletedTotal > 0) {
+			data.push({
+				'Rechnung #': '',
+				Datum: '',
+				Artikel: 'Gelöschte Rechnungen:',
+				Menge: '',
+				Einzelpreis: '',
+				Gesamt: deletedTotal,
+				Status: '',
+			});
+		}
+		data.push({
+			'Rechnung #': '',
+			Datum: '',
+			Artikel: 'GESAMTUMSATZ:',
+			Menge: '',
+			Einzelpreis: '',
+			Gesamt: grandTotal + deletedTotal,
+			Status: '',
+		});
+
+		const ws = XLSX.utils.json_to_sheet(data);
+		const csv = XLSX.utils.sheet_to_csv(ws);
+		const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+		saveAs(blob, 'rechnungsuebersicht.csv');
+	}, [bills, getItemName, getItemPrice, getItemVariant]);
+
 	return (
 		<div className={styles.pageLayout}>
 			<header className={styles.pageHeader}>
@@ -102,6 +480,18 @@ const BillsManagement: React.FC<BillsManagementProps> = () => {
 							<span className={styles.toggleSlider}></span>
 							Gelöschte Rechnungen anzeigen
 						</label>
+					</div>
+
+					<div className={styles.exportControls}>
+						<button onClick={exportToPDF} className={styles.exportButton}>
+							📄 PDF Export
+						</button>
+						<button onClick={exportToExcel} className={styles.exportButton}>
+							📊 Excel Export
+						</button>
+						<button onClick={exportToCSV} className={styles.exportButton}>
+							📋 CSV Export
+						</button>
 					</div>
 
 					<div className={styles.statsInfo}>

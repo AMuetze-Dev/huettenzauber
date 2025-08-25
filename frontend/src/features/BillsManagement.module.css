@@ -69,6 +69,8 @@
   border: 1px solid var(--border);
   border-radius: 16px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  flex-wrap: wrap;
+  gap: var(--spacing-md);
 }
 
 .toggleControls {
@@ -91,6 +93,58 @@
   height: 20px;
   accent-color: var(--accent);
   cursor: pointer;
+}
+
+/* Export Controls */
+.exportControls {
+  display: flex;
+  gap: var(--spacing-sm);
+  flex-wrap: wrap;
+}
+
+.exportButton {
+  min-height: 48px;
+  min-width: 48px;
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: linear-gradient(135deg, var(--background) 0%, var(--background-secondary) 100%);
+  border: 2px solid var(--border);
+  color: var(--text);
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: clamp(0.8rem, 1.8vw, 0.9rem);
+  font-weight: 600;
+  transition: all 200ms ease;
+  position: relative;
+  overflow: hidden;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.exportButton::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, var(--accent-light), transparent);
+  transition: left 0.5s;
+}
+
+.exportButton:hover::before {
+  left: 100%;
+}
+
+.exportButton:hover {
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
+  color: var(--text-on-accent);
+  border-color: var(--accent);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.exportButton:active {
+  transform: scale(0.95);
 }
 
 .statsInfo {
@@ -384,6 +438,16 @@
     flex-direction: column;
     gap: var(--spacing-sm);
     text-align: center;
+  }
+
+  .exportControls {
+    justify-content: center;
+    width: 100%;
+  }
+
+  .exportButton {
+    flex: 1;
+    min-width: 100px;
   }
   
   .billHeader {
