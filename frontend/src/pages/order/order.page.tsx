@@ -25,44 +25,31 @@ const VariantItem: React.FC<VariantItemProps> = ({ item, variant, currentQuantit
 	const [longPressTriggered, setLongPressTriggered] = useState(false);
 	const timeout = React.useRef<NodeJS.Timeout>();
 
-	const handleStart = React.useCallback(
-		(event: React.MouseEvent | React.TouchEvent) => {
-			event.preventDefault();
-			setLongPressTriggered(false);
-
-			timeout.current = setTimeout(() => {
-				if (currentQuantity > 0) {
-					onRemove();
-					setLongPressTriggered(true);
-				}
-			}, 500);
-		},
-		[onRemove, currentQuantity]
-	);
-
-	const handleEnd = React.useCallback(
-		(event: React.MouseEvent | React.TouchEvent) => {
-			if (timeout.current) {
-				clearTimeout(timeout.current);
-			}
-
-			if (!longPressTriggered) {
-				onAdd();
-			}
-			setLongPressTriggered(false);
-		},
-		[onAdd, longPressTriggered]
-	);
-
-	const handleLeave = React.useCallback(() => {
-		if (timeout.current) {
-			clearTimeout(timeout.current);
-		}
+	// Pointer Events für universelle Bedienung (Touch, Maus, Stift)
+	const handlePointerDown = (event: React.PointerEvent) => {
+		event.preventDefault();
 		setLongPressTriggered(false);
-	}, []);
+		timeout.current = setTimeout(() => {
+			if (currentQuantity > 0) {
+				onRemove();
+				setLongPressTriggered(true);
+			}
+		}, 500);
+	};
+
+	const handlePointerUp = (event: React.PointerEvent) => {
+		if (timeout.current) clearTimeout(timeout.current);
+		if (!longPressTriggered) onAdd();
+		setLongPressTriggered(false);
+	};
+
+	const handlePointerLeave = () => {
+		if (timeout.current) clearTimeout(timeout.current);
+		setLongPressTriggered(false);
+	};
 
 	return (
-		<div className={`${styles.variantCompact} ${currentQuantity > 0 ? styles.inCart : ''}`} onMouseDown={handleStart} onTouchStart={handleStart} onMouseUp={handleEnd} onTouchEnd={handleEnd} onMouseLeave={handleLeave}>
+		<div className={`${styles.variantCompact} ${currentQuantity > 0 ? styles.inCart : ''}`} onPointerDown={handlePointerDown} onPointerUp={handlePointerUp} onPointerLeave={handlePointerLeave} onContextMenu={(e) => e.preventDefault()}>
 			<div className={styles.variantContent}>
 				<div className={styles.variantInfo}>
 					<span className={styles.variantName}>{variant.name || 'Standard'}</span>
