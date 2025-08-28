@@ -20,7 +20,7 @@ class StockItem(Base):
     __tablename__ = 'stock_item'
     id = Column(Integer, primary_key=True, autoincrement=True)
     base_item_id = Column(Integer, ForeignKey('stock_item.id', ondelete="Set NULL"), nullable=True)
-    category_id = Column(Integer, ForeignKey('category.id'), nullable=False)
+    category_id = Column(Integer, ForeignKey('category.id'), nullable=True)
 
     name = Column(String(50), nullable=False)
     deposit_amount = Column(Float, default=0.0, nullable=False)

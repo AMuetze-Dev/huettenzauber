@@ -58,6 +58,14 @@ def get_all(db: Session = Depends(get_db)):
         item.item_variants = variants
     return items
 
+@router.get("/all", response_model=List[StockItemDTO])
+def get_all_with_deleted(db: Session = Depends(get_db)):
+    items = StockItemService.get_all_with_deleted(db)
+    for item in items:
+        variants = ItemVariantService.get_all_in_stock_item(db, item.id)
+        item.item_variants = variants
+    return items
+
 @router.get("/{item_id}", response_model=StockItemDTO)
 def get_by_id(item_id: int, db: Session = Depends(get_db)):
     item = StockItemService.get_by_id(db, item_id)

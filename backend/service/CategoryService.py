@@ -54,6 +54,8 @@ def update(db: Session, category_id: int, name: str = None, icon: str = None):
 
 def delete(db: Session, category_id: int):
     category = db.query(Category).filter(Category.id == category_id).first()
+    if stock_items := db.query(Category).filter(Category.id == category_id).first().stock_items:
+        if len(stock_items) > 0: raise HTTPException(status_code=400, detail="Kategorie kann nicht gelöscht werden, da noch Artikel dieser Kategorie zugewiesen sind")
     if not category: raise HTTPException(status_code=404, detail="Kategorie nicht gefunden")
     db.delete(category)
     try:

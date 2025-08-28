@@ -25,6 +25,7 @@ export interface Item {
 interface ProductContextType {
 	categories: Category[];
 	items: Item[];
+	itemsWithDeleted: Item[];
 	reloadAll: () => Promise<void>;
 	addCategory: (cat: Partial<Category>) => Promise<void>;
 	updateCategory: (cat: Category) => Promise<void>;
@@ -44,6 +45,7 @@ export const ProductContext = createContext<ProductContextType | undefined>(unde
 export const ProductProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 	const [categories, setCategories] = useState<Category[]>([]);
 	const [items, setItems] = useState<Item[]>([]);
+	const [itemsWithDeleted, setItemsWithDeleted] = useState<Item[]>([]);
 
 	const reloadCategories = useCallback(async () => {
 		const res = await fetch(`${api}/categories/`);
@@ -63,10 +65,20 @@ export const ProductProvider: React.FC<{ children: React.ReactNode }> = ({ child
 		setItems(await res.json());
 	}, []);
 
+	const reloadItemsWithDeleted = useCallback(async () => {
+		const res = await fetch(`${api}/stock-items/all`);
+		if (!res.ok) {
+			toast.error(await res.text());
+			throw new Error('Fehler beim Laden der Artikel (inkl. gelöschte)');
+		}
+		setItemsWithDeleted(await res.json());
+	}, []);
+
 	const reloadAll = useCallback(async () => {
 		await reloadCategories();
 		await reloadItems();
-	}, [reloadCategories, reloadItems]);
+		await reloadItemsWithDeleted();
+	}, [reloadCategories, reloadItems, reloadItemsWithDeleted]);
 
 	const addCategory = useCallback(
 		async (cat: Partial<Category>) => {
@@ -213,6 +225,7 @@ export const ProductProvider: React.FC<{ children: React.ReactNode }> = ({ child
 			value={{
 				categories,
 				items,
+				itemsWithDeleted,
 				reloadAll,
 				addCategory,
 				updateCategory,

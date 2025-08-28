@@ -15,6 +15,12 @@ def get_all(db: Session):
             .order_by(ItemSorting.sort_order.nullslast(), StockItem.id)
             .all())
 
+def get_all_with_deleted(db: Session):
+    return (db.query(StockItem)
+            .outerjoin(ItemSorting, StockItem.id == ItemSorting.item_id)
+            .order_by(ItemSorting.sort_order.nullslast(), StockItem.id)
+            .all())
+
 def get_by_id(db: Session, item_id: int):
     item = db.query(StockItem).filter(StockItem.is_active, StockItem.id == item_id).first()
     if not item: raise HTTPException(status_code=404, detail="Artikel nicht gefunden")
@@ -163,6 +169,7 @@ def delete(db: Session, item_id: int):
     if not item: raise HTTPException(status_code=404, detail="Artikel nicht gefunden")
     if not item.is_active: raise HTTPException(status_code=400, detail="Inaktiver Artikel kann nicht deaktiviert werden")
     item.is_active = False
+    item.category_id = None
 
     StockItemSortingService.remove_item_from_sorting(db, item_id)
 

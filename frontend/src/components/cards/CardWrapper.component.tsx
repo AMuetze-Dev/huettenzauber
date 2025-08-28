@@ -13,9 +13,10 @@ type CardWrapperProps<T = any> = {
 	onDeleteAction?: (id: number) => void | Promise<void>;
 	item?: T;
 	itemId?: number;
+	deleteDisabled?: boolean;
 };
 
-export default function CardWrapper<T = any>({ children, isEditing, editLocked = false, onRequestEdit, onRequestView, onSaveAction, onDeleteAction, item, itemId }: CardWrapperProps<T>) {
+export default function CardWrapper<T = any>({ children, isEditing, editLocked = false, onRequestEdit, onRequestView, onSaveAction, onDeleteAction, item, itemId, deleteDisabled }: CardWrapperProps<T>) {
 	// Remove modal state, use native confirm dialog
 	const handleDeleteClick = () => {
 		if (window.confirm('Möchten Sie dieses Element wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.')) {
@@ -49,11 +50,11 @@ export default function CardWrapper<T = any>({ children, isEditing, editLocked =
 							<MdEdit size={20} />
 						</button>
 					)}
-					{onDeleteAction && itemId !== undefined && itemId !== -999 && (
-						<button type="button" title="Löschen" className={styles.iconBtn + ' .icon'} onClick={handleDeleteClick}>
+					{onDeleteAction && itemId !== undefined && itemId !== -999 ? (
+						<button type="button" title="Löschen" className={styles.iconBtn + ' .icon'} onClick={handleDeleteClick} disabled={!!deleteDisabled}>
 							<MdDelete size={20} />
 						</button>
-					)}
+					) : null}
 				</div>
 			)}
 

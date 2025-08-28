@@ -1,6 +1,7 @@
 import { MdDragIndicator, MdEdit, MdDelete } from 'react-icons/md';
 import { Item } from '../../context/ProductContext';
 import styles from './CompactItemCard.module.css';
+import { useRef } from 'react';
 
 type CompactItemCardProps = Item & {
 	onEdit?: () => void;
@@ -11,6 +12,7 @@ type CompactItemCardProps = Item & {
 };
 
 export default function CompactItemCard({ id, name, category_id, item_variants, deposit_amount, onEdit, onDelete, onDragStart, onDragEnd, isDragging = false }: CompactItemCardProps) {
+	const touchDragActive = useRef(false);
 	const handleEditClick = (e: React.MouseEvent) => {
 		e.stopPropagation();
 		onEdit?.();
@@ -23,66 +25,85 @@ export default function CompactItemCard({ id, name, category_id, item_variants, 
 		}
 	};
 
+	// Desktop drag events
 	const handleDragStart = (e: React.DragEvent) => {
 		e.dataTransfer.effectAllowed = 'move';
 		e.dataTransfer.setData('text/plain', id.toString());
 		onDragStart?.({ id, name, category_id, item_variants });
 	};
-
 	const handleDragEnd = (e: React.DragEvent) => {
 		onDragEnd?.();
 	};
 
-	// Clean info tag system - price integrated as tag
-	const hasVariants = item_variants && item_variants.length > 1;
-	const firstVariant = item_variants && item_variants.length > 0 ? item_variants[0] : null;
+	// Touch drag events
+	const handleTouchStart = (e: React.TouchEvent) => {
+		touchDragActive.current = true;
+		onDragStart?.({ id, name, category_id, item_variants });
+	};
+	const handleTouchMove = (e: React.TouchEvent) => {
+		// Prevent scrolling while dragging
+		if (touchDragActive.current) e.preventDefault();
+		// Option: Hier könnte man die Position an Parent weitergeben
+	};
+	const handleTouchEnd = (e: React.TouchEvent) => {
+		if (touchDragActive.current) {
+			touchDragActive.current = false;
+			onDragEnd?.();
+		}
+	};
 
+	const handleContextMenu = (e: React.MouseEvent | React.TouchEvent) => {
+		e.preventDefault();
+	};
+
+	const firstVariant = item_variants && item_variants.length > 0 ? item_variants[0] : null;
+	const hasVariants = item_variants && item_variants.length > 1;
 	let priceTag = '';
 	let infoTags: string[] = [];
 
 	if (!firstVariant) {
-		// No variants available
 		priceTag = 'Kein Preis';
 		infoTags = ['Keine Varianten verfügbar'];
 	} else if (hasVariants) {
 		const prices = item_variants.map((v) => v.price);
 		const minPrice = Math.min(...prices);
 		const maxPrice = Math.max(...prices);
-
 		priceTag = minPrice === maxPrice ? `${minPrice.toFixed(2)}€` : `${minPrice.toFixed(2)}€ - ${maxPrice.toFixed(2)}€`;
-
-		// Only show variant names if they exist and differ
 		const uniqueVariantNames = item_variants
 			.map((variant) => variant.name)
 			.filter((name) => name && name.trim() !== '')
-			.filter((name, index, arr) => arr.indexOf(name) === index); // unique only
-
+			.filter((name, index, arr) => arr.indexOf(name) === index);
 		if (uniqueVariantNames.length > 0) {
-			infoTags = uniqueVariantNames.slice(0, 2); // Max 2 variant names
+			infoTags = uniqueVariantNames.slice(0, 2);
 			if (uniqueVariantNames.length > 2) {
 				infoTags.push(`+${uniqueVariantNames.length - 2} weitere`);
 			}
 		} else {
 			infoTags = [`${item_variants.length} Varianten`];
 		}
-	} else if (firstVariant) {
+	} else {
 		priceTag = `${firstVariant.price.toFixed(2)}€`;
-		// For single variants, only show name if it's meaningful
 		if (firstVariant.name && firstVariant.name.trim() !== '' && firstVariant.name !== name) {
 			infoTags = [firstVariant.name];
 		}
-		// If no meaningful variant info, keep it clean (no tags)
 	}
 
-	// Add deposit info if available
 	if (deposit_amount && deposit_amount > 0) {
 		infoTags.push(`+ ${deposit_amount.toFixed(2)}€ Pfand`);
 	}
 
 	return (
-		<article className={`${styles.compactCard} ${isDragging ? styles.dragging : ''}`} draggable onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+		<article
+			className={`${styles.compactCard} ${isDragging ? styles.dragging : ''}`}
+			draggable
+			onDragStart={handleDragStart}
+			onDragEnd={handleDragEnd}
+			// Touch events for the whole card (optional: only on drag handle)
+			onTouchMove={handleTouchMove}
+			onTouchEnd={handleTouchEnd}
+		>
 			{/* Drag Handle */}
-			<div className={styles.dragHandle} title="Ziehen zum Verschieben">
+			<div className={styles.dragHandle} title="Ziehen zum Verschieben" onContextMenu={handleContextMenu} onTouchStart={handleTouchStart}>
 				<MdDragIndicator size={24} />
 			</div>
 

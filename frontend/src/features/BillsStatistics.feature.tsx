@@ -29,13 +29,13 @@ interface BillsStatisticsProps {}
 
 const BillsStatistics: React.FC<BillsStatisticsProps> = () => {
 	const { bills, reloadBills } = useBill();
-	const { items } = useProduct();
+	const { itemsWithDeleted: items } = useProduct();
 	const [activeView, setActiveView] = useState<'consumption' | 'charts'>('consumption');
 	const [chartType, setChartType] = useState<'bar' | 'pie'>('bar');
 
 	useEffect(() => {
 		reloadBills();
-	}, [reloadBills]);
+	}, []);
 
 	// Hilfsfunktionen aus BillsManagement
 	const getItemVariant = useCallback(

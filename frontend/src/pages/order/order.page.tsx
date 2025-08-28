@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ProductProvider, useProduct, Item, ItemVariant, Category } from '../../context/ProductContext';
+import { useProductWithDeleted } from '../../hooks/useProductWithDeleted';
 import { usePersistentCart } from '../../context/PersistentCartContext';
 import * as MdIcons from 'react-icons/md';
 import CartModal from '../../components/modals/CartModal.component';
@@ -70,7 +71,8 @@ const VariantItem: React.FC<VariantItemProps> = ({ item, variant, currentQuantit
 
 // === MAIN COMPONENT ===
 const OrderContent: React.FC<OrderContentProps> = ({ selectedCategoryId: propCategoryId }) => {
-	const productCtx = useProduct();
+	const { categories } = useProduct();
+	const { items } = useProductWithDeleted();
 	const cart = usePersistentCart();
 	const [internalCategoryId, setInternalCategoryId] = useState<number | null>(null);
 	const [isCartModalOpen, setIsCartModalOpen] = useState(false);
@@ -80,20 +82,13 @@ const OrderContent: React.FC<OrderContentProps> = ({ selectedCategoryId: propCat
 
 	// Auto-select first category when categories load (only if no prop provided)
 	useEffect(() => {
-		if (productCtx?.categories.length && !selectedCategoryId && !propCategoryId) {
-			setInternalCategoryId(productCtx.categories[0].id);
+		if (categories.length && !selectedCategoryId && !propCategoryId) {
+			setInternalCategoryId(categories[0].id);
 		}
-	}, [productCtx?.categories, selectedCategoryId, propCategoryId]);
-
-	if (!productCtx) {
-		return <div className={styles.loading}>Lade Daten...</div>;
-	}
-
-	const { categories, items } = productCtx;
+	}, [categories, selectedCategoryId, propCategoryId]);
 
 	// Filter items by selected category
 	const filteredItems = selectedCategoryId ? items.filter((item: Item) => item.category_id === selectedCategoryId) : [];
-
 	const selectedCategory = categories.find((cat: Category) => cat.id === selectedCategoryId);
 
 	const handleAddToCart = (item: Item, variant: ItemVariant) => {
