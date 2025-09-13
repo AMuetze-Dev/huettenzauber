@@ -29,6 +29,13 @@ const CartModal: React.FC<CartModalProps> = ({ isOpen, onClose, onCheckoutComple
 		}
 	}, [isOpen, cart.state.depositReturn]);
 
+	// Setze depositReturnCount auf 0 zurück, wenn Cart geleert wird
+	React.useEffect(() => {
+		if (!cart.state.depositReturn || cart.state.depositReturn.quantity === 0) {
+			setDepositReturnCount(0);
+		}
+	}, [cart.state.depositReturn]);
+
 	// Speichere Pfandpreis im localStorage bei Änderung
 	React.useEffect(() => {
 		localStorage.setItem('depositReturnPrice', depositReturnPrice);
@@ -111,7 +118,7 @@ const CartModal: React.FC<CartModalProps> = ({ isOpen, onClose, onCheckoutComple
 				items: billItems,
 			});
 
-			// Erfolg - leere Warenkorb und schließe Modal
+			// Erfolg - leere Warenkorb und schließe Modalz
 			cart.clearCart();
 			onClose();
 			if (onCheckoutComplete) {
@@ -303,16 +310,22 @@ const CartModal: React.FC<CartModalProps> = ({ isOpen, onClose, onCheckoutComple
 													<span className={styles.gridValue}>{formatPrice(cart.state.totalDepositAmount)}</span>
 												</div>
 											)}
+											{getTotalDepositReturn() > 0 && (
+												<div className={styles.gridRow}>
+													<span className={styles.gridLabel}>Pfandrückgabe:</span>
+													<span className={styles.gridValue + ' ' + styles.success}>-{formatPrice(getTotalDepositReturn())}</span>
+												</div>
+											)}
 											<div className={styles.gridRow + ' ' + styles.bordered}>
-												<span className={styles.gridLabel}>{getTotalDepositReturn() > 0 ? 'Zu zahlen:' : 'Gesamtbetrag:'}</span>
-												<span className={styles.gridValue + ' ' + styles.large}>{formatPrice(getTotalDepositReturn() > 0 ? getTotalToPay() : calculateTotalWithChanges() + cart.state.totalDepositAmount)}</span>
+												<span className={styles.gridLabel}>Zu zahlen:</span>
+												<span className={styles.gridValue + ' ' + styles.large}>{formatPrice(getTotalToPay())}</span>
 											</div>
 										</div>
 									</div>
 								</div>
 
 								{/* Rückgeldrechner */}
-								<div className={styles.rightColumnCard}>
+								{/*<div className={styles.rightColumnCard}>
 									<h4>
 										<MdIcons.MdCalculate size={18} />
 										Rückgeldrechner
@@ -337,7 +350,7 @@ const CartModal: React.FC<CartModalProps> = ({ isOpen, onClose, onCheckoutComple
 											</span>
 										</div>
 									</div>
-								</div>
+								</div>*/}
 
 								{/* Aktionen */}
 								<div className={styles.rightColumnCard}>
