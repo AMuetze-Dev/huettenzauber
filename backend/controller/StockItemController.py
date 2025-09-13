@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 from database import get_db
 from pydantic import BaseModel, Field, model_validator
-from typing import List
+from typing import List, Optional
 import service.StockItemService as StockItemService
 import service.ItemVariantService as ItemVariantService
 
@@ -27,7 +27,7 @@ class ItemVariantUpdateDTO(BaseModel):
 class StockItemDTO(BaseModel):
     id: int
     name: str
-    category_id: int
+    category_id: Optional[int] = None
     deposit_amount: float = 0.0
     is_active: bool = Field(default=True)
     item_variants: List[ItemVariantDTO]

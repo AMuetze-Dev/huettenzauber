@@ -47,9 +47,9 @@ const THEME_ICONS = {
 const BOTTOM_NAVIGATION_CONFIG = [
 	{
 		id: 'lagerbestand',
-		label: 'Lagerbestand',
-		icon: MdIcons.MdInventory,
-		description: 'Bestandsverwaltung',
+		label: 'Rechnungen',
+		icon: MdIcons.MdReceiptLong,
+		description: 'Rechnungsverwaltung',
 	},
 	{
 		id: 'statistik',
@@ -181,7 +181,7 @@ const ServiceContent: React.FC = () => {
 					{!collapsed && !isTouchDevice && <span className={style['nav-label']}>{item.label}</span>}
 
 					{/* Touch: Overlay label when touched */}
-					{showTouchLabels && hoveredItem === `nav-${item.id}` && <span className={style['touch-label']}>{item.label}</span>}
+					{/*{showTouchLabels && hoveredItem === `nav-${item.id}` && <span className={style['touch-label']}>{item.label}</span>} */}
 				</button>
 			</li>
 		);

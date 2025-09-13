@@ -11,15 +11,15 @@ interface BillsManagementProps {}
 
 const BillsManagement: React.FC<BillsManagementProps> = () => {
 	const { bills, reloadBills, deleteBill, isShowingDeleted, switchReloadWithDeleted } = useBill();
-	const { items } = useProduct();
+	const { itemsWithDeleted } = useProduct();
 	const [selectedBill, setSelectedBill] = useState<number | null>(null);
 
 	useEffect(() => {
 		reloadBills();
-	}, [reloadBills, bills]);
+	}, []);
 
 	const getItemVariant = (variantId: number): ItemVariant | undefined => {
-		for (const item of items) {
+		for (const item of itemsWithDeleted) {
 			const variant = item.item_variants?.find((v: any) => v.id === variantId);
 			if (variant) {
 				return variant;
@@ -49,7 +49,7 @@ const BillsManagement: React.FC<BillsManagementProps> = () => {
 
 	// Hilfsfunktion um Item-Name aus variant_id zu bekommen
 	const getItemName = (variantId: number): string => {
-		for (const item of items) {
+		for (const item of itemsWithDeleted) {
 			const variant = item.item_variants?.find((v: any) => v.id === variantId);
 			if (variant) {
 				const hasMultipleVariants = item.item_variants.length > 1;

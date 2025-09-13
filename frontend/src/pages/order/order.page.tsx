@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { ProductProvider, useProduct, Item, ItemVariant, Category } from '../../context/ProductContext';
-import { useProductWithDeleted } from '../../hooks/useProductWithDeleted';
 import { usePersistentCart } from '../../context/PersistentCartContext';
 import * as MdIcons from 'react-icons/md';
 import CartModal from '../../components/modals/CartModal.component';
@@ -71,8 +70,7 @@ const VariantItem: React.FC<VariantItemProps> = ({ item, variant, currentQuantit
 
 // === MAIN COMPONENT ===
 const OrderContent: React.FC<OrderContentProps> = ({ selectedCategoryId: propCategoryId }) => {
-	const { categories } = useProduct();
-	const { items } = useProductWithDeleted();
+	const { categories, items } = useProduct();
 	const cart = usePersistentCart();
 	const [internalCategoryId, setInternalCategoryId] = useState<number | null>(null);
 	const [isCartModalOpen, setIsCartModalOpen] = useState(false);
