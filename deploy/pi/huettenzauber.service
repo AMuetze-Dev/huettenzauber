@@ -1,0 +1,17 @@
+[Unit]
+Description=Huettenzauber POS (docker compose, prod)
+Requires=docker.service
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory=/opt/huettenzauber
+# Images werden bei install.sh / Update gebaut, hier nur starten.
+ExecStart=/usr/bin/docker compose -f docker-compose.prod.yml up -d
+ExecStop=/usr/bin/docker compose -f docker-compose.prod.yml down
+TimeoutStartSec=0
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,133 @@
+.screen {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+}
+
+.header {
+  height: 52px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 24px;
+  border-bottom: 1px solid rgba(236, 233, 228, 0.14);
+  background: var(--chrome);
+}
+.header img {
+  height: 34px;
+}
+.kicker {
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.header .right {
+  margin-left: auto;
+}
+
+.welcome {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+.welcome h1 {
+  font-size: 40px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+}
+.welcome p {
+  color: var(--text-muted);
+}
+
+.body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
+
+.lines {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 18px 22px;
+}
+.line {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  height: 44px;
+  flex: none;
+  border-bottom: 1px solid rgba(236, 233, 228, 0.07);
+}
+.line .q {
+  width: 40px;
+  color: var(--accent);
+  font-weight: 500;
+  font-size: 15px;
+}
+.line .name {
+  flex: 1;
+  min-width: 0;
+  font-size: 16px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.line .sum {
+  font-weight: 500;
+  font-size: 16px;
+  color: rgba(236, 233, 228, 0.8);
+}
+.more {
+  padding-top: 10px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.total {
+  width: 398px;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 14px;
+  padding: 22px 26px;
+  background: var(--chrome);
+  border-left: 1px solid rgba(236, 233, 228, 0.12);
+}
+.row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+  color: var(--text-muted);
+}
+.row.credit {
+  color: var(--accent);
+}
+.rule {
+  height: 1px;
+  background: rgba(236, 233, 228, 0.16);
+}
+.grandLabel {
+  font-size: 13px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.grand {
+  font-size: 76px;
+  font-weight: 500;
+  letter-spacing: -0.035em;
+  white-space: nowrap;
+}
+.foot {
+  font-size: 13px;
+  color: var(--text-muted);
+}

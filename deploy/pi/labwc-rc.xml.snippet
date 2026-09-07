@@ -1,0 +1,13 @@
+<!--
+  In ~/.config/labwc/rc.xml einfuegen (innerhalb von <labwc_config> ... </labwc_config>).
+  Ordnet die beiden Kiosk-Fenster ihren Displays zu und macht sie zu Vollbild.
+  "output" braucht labwc >= 0.7 (Pi OS Bookworm aktuell). Bei aelterem labwc
+  stattdessen die Displays per wlr-randr/kanshi anordnen und nur fullscreen=yes lassen.
+  Output-Namen mit `wlr-randr` ermitteln und ggf. tauschen.
+-->
+<windowRules>
+  <windowRule identifier="hz-order" output="HDMI-A-1" fullscreen="yes"
+              skipTaskbar="yes" skipWindowSwitcher="yes" />
+  <windowRule identifier="hz-guest" output="HDMI-A-2" fullscreen="yes"
+              skipTaskbar="yes" skipWindowSwitcher="yes" />
+</windowRules>

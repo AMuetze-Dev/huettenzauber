@@ -1,0 +1,55 @@
+name: huettenzauber
+
+# Produktions-Stack (Raspberry Pi). Keine Bind-Mounts, kein Reload, kein pgadmin.
+#   docker compose -f docker-compose.prod.yml up -d --build
+# Einstieg: http://<pi>/  (Frontend-Container liefert SPA + /api-Proxy).
+
+x-db-env: &db-env
+  POSTGRES_USER: ${POSTGRES_USER:-root}
+  POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-root}
+  POSTGRES_DB: ${POSTGRES_DB:-huettenzauber}
+
+services:
+  db:
+    image: postgres:17-bookworm
+    container_name: huettenzauber_db
+    restart: unless-stopped
+    environment: *db-env
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-root} -d ${POSTGRES_DB:-huettenzauber}"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    networks: [huettenzauber]
+
+  backend:
+    build: ./backend
+    container_name: huettenzauber_backend
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER:-root}:${POSTGRES_PASSWORD:-root}@db:5432/${POSTGRES_DB:-huettenzauber}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost}
+    depends_on:
+      db:
+        condition: service_healthy
+    networks: [huettenzauber]
+
+  frontend:
+    build:
+      context: ./frontend
+      target: runner
+    container_name: huettenzauber_frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks: [huettenzauber]
+
+networks:
+  huettenzauber:
+
+volumes:
+  pgdata:

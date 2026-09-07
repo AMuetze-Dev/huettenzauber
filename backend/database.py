@@ -1,13 +1,23 @@
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-from entity.DAO import Base
-import os
+from collections.abc import Iterator
 
-DATABASE_HOST = os.getenv("DATABASE_HOST", "postgres_db")
-engine = create_engine(f"postgresql://root:root@{DATABASE_HOST}:5432/huettenzauber")
+from sqlalchemy import create_engine
+from sqlalchemy.engine import Engine
+from sqlalchemy.orm import Session, sessionmaker
+
+from core.config import settings
+
+
+def make_engine(url: str) -> Engine:
+    return create_engine(url, pool_pre_ping=True)
+
+
+engine = make_engine(settings.database_url)
 SessionLocal = sessionmaker(autoflush=True, bind=engine)
-Base.metadata.create_all(bind=engine)
-def get_db():
+
+
+def get_db() -> Iterator[Session]:
     db = SessionLocal()
-    try: yield db
-    finally: db.close()
+    try:
+        yield db
+    finally:
+        db.close()

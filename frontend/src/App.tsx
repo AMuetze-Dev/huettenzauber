@@ -1,55 +1,26 @@
-import React from "react";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
-import { Billing, Landing, Service, Order } from "./pages";
-import { ToastContainer } from "react-toastify";
-import { PersistentCartProvider } from "./context/PersistentCartContext";
-import { BillProvider } from "./context/BillContext";
-import { ProductProvider } from "./context/ProductContext";
-
-// Theme Context für globalen Zugriff
-export const ThemeContext = React.createContext<{
-  theme: string;
-  switchTheme: () => void;
-}>({
-  theme: "light",
-  switchTheme: () => {},
-});
+import { Navigate, Route, Routes } from "react-router-dom";
+import AdminLayout from "./admin/AdminLayout";
+import CatalogAdmin from "./admin/CatalogAdmin";
+import EventsAdmin from "./admin/EventsAdmin";
+import StatsAdmin from "./admin/StatsAdmin";
+import BillsOverview from "./pages/BillsOverview";
+import GuestDisplay from "./pages/GuestDisplay";
+import OrderTerminal from "./pages/OrderTerminal";
 
 export default function App() {
-  const defaultDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-  const [theme, setTheme] = React.useState(
-    localStorage.getItem("theme") || (defaultDark ? "dark" : "light")
-  );
-
-  const switchTheme = React.useCallback(() => {
-    setTheme((prev) => {
-      const newTheme = prev === "dark" ? "light" : "dark";
-      localStorage.setItem("theme", newTheme);
-      return newTheme;
-    });
-  }, []);
-
-  React.useEffect(() => {
-    document.body.setAttribute("data-theme", theme);
-  }, [theme]);
-
   return (
-    <ThemeContext.Provider value={{ theme, switchTheme }}>
-      <ProductProvider>
-        <BillProvider>
-          <PersistentCartProvider>
-            <BrowserRouter>
-              <ToastContainer position="top-right" autoClose={2000} />
-              <Routes>
-                <Route path="/" element={<Landing />} />
-                <Route path="/service" element={<Service />} />
-                <Route path="/order" element={<Order />} />
-                <Route path="/billing" element={<Billing />} />
-              </Routes>
-            </BrowserRouter>
-          </PersistentCartProvider>
-        </BillProvider>
-      </ProductProvider>
-    </ThemeContext.Provider>
+    <Routes>
+      <Route path="/" element={<Navigate to="/order" replace />} />
+      <Route path="/order" element={<OrderTerminal />} />
+      <Route path="/bills" element={<BillsOverview />} />
+      <Route path="/guest" element={<GuestDisplay />} />
+      <Route path="/verwaltung" element={<AdminLayout />}>
+        <Route index element={<Navigate to="veranstaltungen" replace />} />
+        <Route path="veranstaltungen" element={<EventsAdmin />} />
+        <Route path="katalog" element={<CatalogAdmin />} />
+        <Route path="statistik" element={<StatsAdmin />} />
+      </Route>
+      <Route path="*" element={<Navigate to="/order" replace />} />
+    </Routes>
   );
 }

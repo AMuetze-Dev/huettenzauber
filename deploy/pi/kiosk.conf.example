@@ -1,0 +1,17 @@
+# Kopieren nach deploy/pi/kiosk.conf und anpassen.
+
+# URLs, die auf den beiden Displays geoeffnet werden.
+ORDER_URL="http://localhost/order"
+GUEST_URL="http://localhost/guest"
+
+# Wayland-Output-Namen. Ermitteln mit:  wlr-randr        (oder: wl-randr / labwc-Log)
+# Typisch am Pi 5: HDMI-A-1 und HDMI-A-2. Welcher Anschluss welches Panel ist,
+# durch Ausprobieren (Werte tauschen) herausfinden.
+ORDER_OUTPUT="HDMI-A-1"
+GUEST_OUTPUT="HDMI-A-2"
+
+# Wie lange auf die App warten, bevor Chromium startet (Sekunden).
+WAIT_FOR_APP=120
+
+# Health-Check-URL (muss 200/30x liefern, wenn die App bereit ist).
+HEALTH_URL="http://localhost/"
