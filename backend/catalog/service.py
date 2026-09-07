@@ -7,11 +7,14 @@ from __future__ import annotations
 
 from decimal import Decimal
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
+
+import re
 
 from core.db import commit
 from core.exceptions import ConflictError, NotFoundError, ValidationError
+from core.money import check_money, check_qty, clean_text
 from models import Catalog, Category, Event, ItemVariant, StockItem
 from schemas import (
     CategoryCreate,
@@ -24,10 +27,11 @@ from schemas import (
 
 NAME_MAX = 50
 CATALOG_NAME_MAX = 80
+_HEX_COLOR = re.compile(r"^#[0-9a-fA-F]{6}$")
 
 
 def _clean_name(value: str, *, field: str = "Name", max_len: int = NAME_MAX) -> str:
-    text = (value or "").strip()
+    text = clean_text(value or "").strip()
     if not text:
         raise ValidationError(f"{field} darf nicht leer sein")
     if len(text) > max_len:
@@ -36,8 +40,32 @@ def _clean_name(value: str, *, field: str = "Name", max_len: int = NAME_MAX) -> 
 
 
 def _variant_name(value: str | None) -> str | None:
-    text = (value or "").strip()
+    text = clean_text(value or "").strip()
     return text or None
+
+
+def _check_sort_order(value: int) -> int:
+    if value < 0:
+        raise ValidationError("Sortierreihenfolge darf nicht negativ sein")
+    return value
+
+
+def _next_sort_order(db: Session, model, catalog_id: int) -> int:
+    """Neu Angelegtes hinten anhaengen. Ohne das landet jedes neue Element auf
+    0 und draengelt sich beim Bedienterminal vor die eingespielte Reihenfolge."""
+    highest = db.scalar(
+        select(func.max(model.sort_order)).where(model.catalog_id == catalog_id)
+    )
+    return 0 if highest is None else highest + 1
+
+
+def _clean_color(value: str | None) -> str | None:
+    if value is None or not value.strip():
+        return None
+    color = value.strip()
+    if not _HEX_COLOR.match(color):
+        raise ValidationError("Farbe muss im Format #rrggbb angegeben werden")
+    return color.lower()
 
 
 def get_catalog(db: Session, catalog_id: int) -> Catalog:
@@ -124,7 +152,11 @@ def add_category(db: Session, catalog_id: int, data: CategoryCreate) -> Category
             "Kategorie mit diesem Namen existiert bereits in diesem Katalog"
         )
     category = Category(
-        catalog_id=catalog_id, name=name, icon=icon, sort_order=data.sort_order
+        catalog_id=catalog_id,
+        name=name,
+        icon=icon,
+        sort_order=_check_sort_order(data.sort_order)
+        or _next_sort_order(db, Category, catalog_id),
     )
     db.add(category)
     commit(db, on_conflict="Kategorie mit diesem Namen existiert bereits in diesem Katalog")
@@ -149,7 +181,8 @@ def update_category(db: Session, category_id: int, data: CategoryUpdate) -> Cate
         )
     category.name = name
     category.icon = icon
-    category.sort_order = data.sort_order
+    if data.sort_order is not None:
+        category.sort_order = _check_sort_order(data.sort_order)
     commit(db, on_conflict="Kategorie mit diesem Namen existiert bereits in diesem Katalog")
     db.refresh(category)
     return category
@@ -163,31 +196,37 @@ def delete_category(db: Session, category_id: int) -> None:
     commit(db)
 
 
-def reorder_categories(db: Session, catalog_id: int, ordered_ids: list[int]) -> list[Category]:
-    get_catalog(db, catalog_id)
+def _apply_order(rows: list, ordered_ids: list[int], label: str) -> None:
+    """Setzt sort_order lueckenlos 0..n-1: erst die genannten IDs in der
+    angegebenen Reihenfolge, dann der Rest in bisheriger Reihenfolge.
+    So bleiben die Werte immer eindeutig."""
     if len(set(ordered_ids)) != len(ordered_ids):
         raise ValidationError("Doppelte IDs in der Reihenfolge")
-    by_id = {
-        c.id: c
-        for c in db.scalars(
-            select(Category).where(Category.catalog_id == catalog_id)
-        )
-    }
+    by_id = {r.id: r for r in rows}
     missing = set(ordered_ids) - by_id.keys()
     if missing:
-        raise NotFoundError(f"Kategorien nicht in diesem Katalog: {sorted(missing)}")
+        raise NotFoundError(f"{label} nicht in diesem Katalog: {sorted(missing)}")
+
+    named = set(ordered_ids)
+    rest = [r for r in rows if r.id not in named]
     for index, cid in enumerate(ordered_ids):
         by_id[cid].sort_order = index
+    for offset, row in enumerate(rest, start=len(ordered_ids)):
+        row.sort_order = offset
+
+
+def reorder_categories(db: Session, catalog_id: int, ordered_ids: list[int]) -> list[Category]:
+    get_catalog(db, catalog_id)
+    rows = list_categories(db, catalog_id)
+    _apply_order(rows, ordered_ids, "Kategorien")
     commit(db)
     return list_categories(db, catalog_id)
 
 
 # --- Artikel + Varianten --------------------------------------------
 def _validate_variant(v: VariantCreate | VariantUpsert) -> None:
-    if v.price is None or v.price < Decimal("0"):
-        raise ValidationError("Preis muss >= 0 sein")
-    if v.bill_steps is None or v.bill_steps <= Decimal("0"):
-        raise ValidationError("Rechenschritt (bill_steps) muss > 0 sein")
+    check_money(v.price, field="Preis")
+    check_qty(v.bill_steps, field="Rechenschritt (bill_steps)", positive=True)
 
 
 def _check_variant_batch(variants) -> None:
@@ -251,8 +290,8 @@ def get_stock_item(db: Session, item_id: int) -> StockItem:
 def add_stock_item(db: Session, catalog_id: int, data: StockItemCreate) -> StockItem:
     get_catalog(db, catalog_id)
     name = _clean_name(data.name, field="Artikelname")
-    if data.deposit_amount is not None and data.deposit_amount < Decimal("0"):
-        raise ValidationError("Pfand muss >= 0 sein")
+    check_money(data.deposit_amount, field="Pfand")
+    color = _clean_color(data.color)
     category_id = _resolve_category(db, catalog_id, data.category_id)
     _assert_unique_item_name(db, catalog_id, category_id, name, exclude=None)
     _check_variant_batch(data.variants)
@@ -262,7 +301,10 @@ def add_stock_item(db: Session, catalog_id: int, data: StockItemCreate) -> Stock
         category_id=category_id,
         name=name,
         deposit_amount=data.deposit_amount,
-        sort_order=data.sort_order,
+        sort_order=_check_sort_order(data.sort_order)
+        or _next_sort_order(db, StockItem, catalog_id),
+        is_favorite=data.is_favorite,
+        color=color,
         variants=[
             ItemVariant(
                 name=_variant_name(v.name), price=v.price, bill_steps=v.bill_steps
@@ -282,8 +324,8 @@ def update_stock_item(db: Session, item_id: int, data: StockItemUpdate) -> Stock
         raise ConflictError("Inaktiver Artikel kann nicht bearbeitet werden")
 
     name = _clean_name(data.name, field="Artikelname")
-    if data.deposit_amount is not None and data.deposit_amount < Decimal("0"):
-        raise ValidationError("Pfand muss >= 0 sein")
+    check_money(data.deposit_amount, field="Pfand")
+    color = _clean_color(data.color)
     category_id = _resolve_category(db, item.catalog_id, data.category_id)
     _assert_unique_item_name(db, item.catalog_id, category_id, name, exclude=item_id)
     _check_variant_batch(data.variants)
@@ -291,7 +333,12 @@ def update_stock_item(db: Session, item_id: int, data: StockItemUpdate) -> Stock
     item.name = name
     item.category_id = category_id
     item.deposit_amount = data.deposit_amount
-    item.sort_order = data.sort_order
+    # Ohne Angabe bleibt die Position: sonst springt ein Artikel bei jeder
+    # Preisaenderung an den Anfang der Kachelwand.
+    if data.sort_order is not None:
+        item.sort_order = _check_sort_order(data.sort_order)
+    item.is_favorite = data.is_favorite
+    item.color = color
 
     existing = {v.id: v for v in item.variants}
     keep: set[int] = set()
@@ -336,18 +383,81 @@ def reorder_stock_items(
     db: Session, catalog_id: int, ordered_ids: list[int]
 ) -> list[StockItem]:
     get_catalog(db, catalog_id)
-    if len(set(ordered_ids)) != len(ordered_ids):
-        raise ValidationError("Doppelte IDs in der Reihenfolge")
-    by_id = {
-        s.id: s
-        for s in db.scalars(
-            select(StockItem).where(StockItem.catalog_id == catalog_id)
-        )
-    }
-    missing = set(ordered_ids) - by_id.keys()
-    if missing:
-        raise NotFoundError(f"Artikel nicht in diesem Katalog: {sorted(missing)}")
-    for index, sid in enumerate(ordered_ids):
-        by_id[sid].sort_order = index
+    rows = list_stock_items(db, catalog_id, include_inactive=True)
+    _apply_order(rows, ordered_ids, "Artikel")
     commit(db)
     return list_stock_items(db, catalog_id, include_inactive=True)
+
+
+def set_favorite(db: Session, item_id: int, is_favorite: bool) -> StockItem:
+    item = _get_stock_item(db, item_id)
+    if not item.is_active and is_favorite:
+        raise ConflictError("Inaktiver Artikel kann kein Schnellzugriff sein")
+    item.is_favorite = is_favorite
+    commit(db)
+    db.refresh(item)
+    return item
+
+
+def list_favorites(db: Session, catalog_id: int) -> list[StockItem]:
+    get_catalog(db, catalog_id)
+    return list(
+        db.scalars(
+            select(StockItem)
+            .where(
+                StockItem.catalog_id == catalog_id,
+                StockItem.is_active.is_(True),
+                StockItem.is_favorite.is_(True),
+            )
+            .order_by(StockItem.sort_order, StockItem.id)
+        )
+    )
+
+
+def duplicate_catalog(db: Session, catalog_id: int, new_name: str) -> Catalog:
+    """Kopiert Katalog inkl. Kategorien, Artikel und Varianten.
+    Bons bleiben beim Original - die Kopie startet ohne Historie."""
+    source = get_catalog(db, catalog_id)
+    name = _clean_name(new_name, field="Katalogname", max_len=CATALOG_NAME_MAX)
+    if db.scalars(select(Catalog).where(Catalog.name == name)).first():
+        raise ConflictError("Katalog mit diesem Namen existiert bereits")
+
+    copy = Catalog(name=name)
+    db.add(copy)
+    db.flush()
+
+    cat_map: dict[int, int] = {}
+    for cat in list_categories(db, source.id):
+        new_cat = Category(
+            catalog_id=copy.id,
+            name=cat.name,
+            icon=cat.icon,
+            sort_order=cat.sort_order,
+        )
+        db.add(new_cat)
+        db.flush()
+        cat_map[cat.id] = new_cat.id
+
+    for item in list_stock_items(db, source.id, include_inactive=False):
+        db.add(
+            StockItem(
+                catalog_id=copy.id,
+                category_id=cat_map.get(item.category_id) if item.category_id else None,
+                name=item.name,
+                deposit_amount=item.deposit_amount,
+                sort_order=item.sort_order,
+                is_favorite=item.is_favorite,
+                color=item.color,
+                variants=[
+                    ItemVariant(
+                        name=v.name, price=v.price, bill_steps=v.bill_steps
+                    )
+                    for v in item.variants
+                    if v.is_active
+                ],
+            )
+        )
+
+    commit(db, on_conflict="Katalog mit diesem Namen existiert bereits")
+    db.refresh(copy)
+    return copy

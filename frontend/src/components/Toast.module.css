@@ -1,0 +1,70 @@
+.stack {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+  max-width: min(420px, calc(100vw - 32px));
+}
+
+.toast {
+  pointer-events: auto;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: var(--radius-tile);
+  background: var(--chrome);
+  border: 1px solid var(--border);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  animation: slideIn 160ms ease-out;
+}
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(12px);
+  }
+}
+.toast.success {
+  border-color: var(--border-active);
+}
+.toast.error {
+  border-color: var(--danger-border);
+  background: var(--danger-panel);
+}
+.icon {
+  flex: none;
+  margin-top: 1px;
+}
+.success .icon {
+  color: var(--accent-bright);
+}
+.error .icon {
+  color: var(--danger);
+}
+.body {
+  flex: 1;
+  min-width: 0;
+  font-size: 13.5px;
+  line-height: 1.35;
+  word-break: break-word;
+}
+.error .body {
+  color: var(--danger-text);
+}
+.close {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+}
+.close:hover {
+  color: var(--text);
+}

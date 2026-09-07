@@ -50,7 +50,13 @@ export function Modal({
 }) {
   return (
     <div className={s.backdrop} onClick={onClose}>
-      <div className={s.dialog} onClick={(e) => e.stopPropagation()}>
+      <div
+        className={s.dialog}
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className={s.dialogHead}>
           <h2>{title}</h2>
           <Button small aria-label="Schließen" onClick={onClose}>

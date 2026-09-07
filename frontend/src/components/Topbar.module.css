@@ -7,21 +7,40 @@
   padding: 0 18px 0 20px;
   border-bottom: 1px solid rgba(236, 233, 228, 0.14);
   background: var(--chrome);
+  overflow: hidden;
 }
 .topbar img {
   height: 40px;
+  flex: none;
 }
 .sep {
   width: 1px;
   height: 22px;
+  flex: none;
   background: rgba(236, 233, 228, 0.16);
 }
+/* Der Ortsname weicht als Erstes - die Knoepfe muessen bleiben. */
 .place {
   font-size: 13px;
   color: var(--text-muted);
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .grow {
   flex: 1;
+  min-width: 0;
+}
+.navBtn {
+  flex: none;
+}
+
+@media (max-width: 700px) {
+  .place,
+  .sep {
+    display: none;
+  }
 }
 
 .navBtn {

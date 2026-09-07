@@ -27,7 +27,7 @@ def test_deposit_return_zero_quantity_clears(client, active_event):
     r = client.put(
         "/api/active-order/deposit-return", json={"unit_amount": "2.00", "quantity": 0}
     )
-    assert r.json()["deposit_return_unit_amount"] is None
+    assert r.json()["deposit_returns"] == []
     assert _D(r.json()["deposit_return_total"]) == _D("0")
 
 
@@ -56,5 +56,5 @@ def test_deposit_return_cleared_after_bill(client, active_event):
     )
     client.post("/api/bills")
     after = client.get("/api/active-order").json()
-    assert after["deposit_return_unit_amount"] is None
+    assert after["deposit_returns"] == []
     assert after["lines"] == []

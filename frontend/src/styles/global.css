@@ -1,25 +1,6 @@
+/* Inter kommt self-hosted aus @fontsource/inter (kein CDN, offline-tauglich).
+   Import in main.tsx, damit Vite die woff2 mitbundelt. */
 @import "./tokens.css";
-
-/* Inter self-hosted. Dateien nach frontend/public/fonts/ legen
-   (Inter-Regular/Medium/SemiBold.woff2). Fehlen sie, greift der System-Fallback. */
-@font-face {
-  font-family: "Inter";
-  src: url("/fonts/Inter-Regular.woff2") format("woff2");
-  font-weight: 400;
-  font-display: swap;
-}
-@font-face {
-  font-family: "Inter";
-  src: url("/fonts/Inter-Medium.woff2") format("woff2");
-  font-weight: 500;
-  font-display: swap;
-}
-@font-face {
-  font-family: "Inter";
-  src: url("/fonts/Inter-SemiBold.woff2") format("woff2");
-  font-weight: 600;
-  font-display: swap;
-}
 
 *,
 *::before,
@@ -64,6 +45,17 @@ input {
 
 .tnum {
   font-variant-numeric: tabular-nums;
+}
+
+/* Rahmen um alle Bedien-Screens: Stoerungsbanner oben, Screen fuellt den Rest */
+.app-shell {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+.app-main {
+  flex: 1;
+  min-height: 0;
 }
 
 /* Kein Text-Markieren / Callout auf den Touch-Terminals */

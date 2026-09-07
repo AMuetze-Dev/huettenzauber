@@ -3,6 +3,7 @@ import {
   ArrowLeft,
   CalendarBlank,
   ChartBar,
+  Coins,
   SquaresFour,
 } from "@phosphor-icons/react";
 import { Topbar } from "../components/Topbar";
@@ -34,6 +35,13 @@ export default function AdminLayout() {
           >
             <SquaresFour size={18} />
             Katalog
+          </NavLink>
+          <NavLink
+            to="/verwaltung/kasse"
+            className={({ isActive }) => (isActive ? s.active : "")}
+          >
+            <Coins size={18} />
+            Kassenschnitt
           </NavLink>
           <NavLink
             to="/verwaltung/statistik"

@@ -400,6 +400,47 @@ E4–E7 (unten) sind entschieden: warme Screen-Palette maßgeblich · fehlende S
 
 ---
 
+## Teil G – Entscheidungen aus dem Betriebs-Feedback (2026-09-07)
+
+Nach der ersten Bedienung am fertigen Produkt. Alle Punkte sind umgesetzt.
+
+- **D21 – Revisionszähler an der aktiven Bestellung.** `active_order.revision`
+  steigt bei jeder Änderung; Client übernimmt nur einen *neueren* Stand.
+  Grund: 10"-Terminal und Handy tippen auf denselben Korb, Antworten und
+  SSE-Nachrichten überholen sich. Ohne Zähler verschluckte die letzte
+  eintreffende (alte) Antwort fremde Positionen.
+  Migration `0004`.
+- **D22 – Zeilen-Delta als ein einziges `INSERT … ON CONFLICT DO UPDATE`.**
+  Zwei zeitgleiche erste Tipps auf dieselbe Position liefen vorher in eine
+  Unique-Verletzung („Integritätsverletzung"). Test: `test_concurrency.py`.
+- **D23 – Der SSE-Stream hält keine DB-Verbindung.** Die Request-Session wird
+  nach dem ersten Lesen committet. Vorher blockierten zwei Displays plus Handy
+  dauerhaft drei Verbindungen als `idle in transaction` – und jedes
+  `alembic upgrade` lief in den Lock.
+- **D24 – Pfandrückgabe je Pfandbetrag eine Zeile** (`active_deposit_return`).
+  Gemischtes Leergut in einem Vorgang: 3 Weingläser à 2,00 € + 2 Biergläser
+  à 1,50 € = 9,00 €. Die Sorten kommen aus dem Katalog (Artikel-Pfand), der
+  Bediener tippt das Gefäß an, nicht den Betrag. Migration `0005`.
+- **D25 – Bargeldbewegungen** (`cash_movement`, vorzeichenbehaftet).
+  Wechselgeld nachlegen (+), Losung in den Tresor (−). Fließt in den
+  Soll-Bestand des Kassenschnitts ein. Migration `0005`.
+- **D26 – Kategorie-Symbol ist gewählt, nicht geraten.** Feste Icon-Tabelle
+  (`CATEGORY_ICONS`), Schlüssel steht in `category.icon`. Die alte Namens-
+  Heuristik bleibt nur als Notnagel für Alt-Bestand. Grund: am Ausschank wird
+  auf das Bild getippt, nicht gelesen.
+- **D27 – Artikelfarbe färbt die Kachel**, nicht nur einen Randstreifen
+  (`color-mix`). Immer zusätzlich zum Namen, nie an seiner Stelle.
+- **D28 – `sort_order` bleibt beim Bearbeiten stehen** (`None` = unverändert),
+  Neues hängt hinten an. Vorher sprang ein Artikel bei jeder Preisänderung an
+  den Anfang der Kachelwand.
+- **D29 – „Leeren" ist eine Server-Operation** (`DELETE /api/active-order`).
+  Vorher nur lokal: das Kundendisplay zeigte weiter die alte Bestellung.
+- **D30 – Kein festes Spaltenraster.** Kachelwand `auto-fill`, Fußleiste und
+  Kopfzeile schrumpfen statt zu überlaufen. Eine Querleiste kostet am Tresen
+  Zeit.
+
+---
+
 ## Quellen
 
 - [Create React App is Now Deprecated – Build5Nines](https://build5nines.com/create-react-app-is-now-deprecated-time-to-migrate-to-vite-or-next-js/) (2025)

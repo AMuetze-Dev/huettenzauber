@@ -44,6 +44,11 @@
 .welcome p {
   color: var(--text-muted);
 }
+.clock {
+  font-size: 18px;
+  letter-spacing: 0.14em;
+  color: var(--accent);
+}
 
 .body {
   flex: 1;

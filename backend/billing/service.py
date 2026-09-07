@@ -9,10 +9,22 @@ from sqlalchemy.orm import Session
 from core.clock import business_day
 from core.db import commit
 from core.exceptions import ConflictError, NotFoundError, ValidationError
-from models import Bill, BillItem, DayClose, Event, ItemVariant, StockItem
+from core.money import check_money, clean_text, money
+from models import (
+    Bill,
+    BillItem,
+    CashFloat,
+    CashMovement,
+    DayClose,
+    DepositReturn,
+    Event,
+    ItemVariant,
+    StockItem,
+)
 from order import service as order_service
 from schemas import (
     BillListItem,
+    CashCountOut,
     ConsumptionRow,
     DayBreakdown,
     DaySummaryOut,
@@ -54,28 +66,100 @@ def create_bill_from_active_order(db: Session, event_id: int) -> Bill:
             )
         )
 
-    unit = order.deposit_return_unit_amount or ZERO
-    qty = order.deposit_return_quantity or 0
+    # Gemischtes Leergut: je Pfandbetrag eine Zeile (3× 2,00 € + 2× 1,50 €).
+    returns = [
+        (entry.unit_amount, entry.quantity)
+        for entry in order.deposit_returns
+        if entry.quantity > 0 and entry.unit_amount > 0
+    ]
+    deposit_return_total = sum((u * q for u, q in returns), ZERO)
+    day = business_day()
 
     bill = Bill(
         event_id=event_id,
-        business_day=business_day(),
+        business_day=day,
         total_gross=total_gross,
         total_deposit=total_deposit,
-        deposit_return_total=unit * qty,
+        deposit_return_total=deposit_return_total,
         items=bill_items,
     )
     db.add(bill)
+    db.flush()
+
+    # Pfandrueckgaben des Vorgangs mitschreiben, damit der Kassenschnitt
+    # alle Rueckgaben an einer Stelle sieht.
+    for unit, qty in returns:
+        db.add(
+            DepositReturn(
+                event_id=event_id,
+                bill_id=bill.id,
+                business_day=day,
+                unit_amount=unit,
+                quantity=qty,
+                total_amount=unit * qty,
+            )
+        )
 
     for line in list(order.lines):
         db.delete(line)
-    order.deposit_return_unit_amount = None
-    order.deposit_return_quantity = None
+    for entry in list(order.deposit_returns):
+        db.delete(entry)
+    order_service.touch(db, event_id)
 
     commit(db)
     db.refresh(bill)
     order_service.broadcast(db, event_id)  # Kundendisplay: Bestellung ist jetzt leer
     return bill
+
+
+# --- Eigenstaendige Pfandrueckgabe ------------------------------
+def create_standalone_deposit_return(
+    db: Session, event_id: int, unit_amount: Decimal, quantity: int
+) -> DepositReturn:
+    check_money(unit_amount, field="Pfandbetrag")
+    if unit_amount <= 0:
+        raise ValidationError("Pfandbetrag muss > 0 sein")
+    if quantity <= 0:
+        raise ValidationError("Anzahl muss > 0 sein")
+    if quantity > 100000:
+        raise ValidationError("Anzahl ist unrealistisch hoch")
+
+    entry = DepositReturn(
+        event_id=event_id,
+        bill_id=None,
+        business_day=business_day(),
+        unit_amount=unit_amount,
+        quantity=quantity,
+        total_amount=unit_amount * quantity,
+    )
+    db.add(entry)
+    commit(db)
+    db.refresh(entry)
+    return entry
+
+
+def list_deposit_returns(
+    db: Session, event_id: int, day: date | None = None, *, standalone_only: bool = False
+) -> list[DepositReturn]:
+    day = day or business_day()
+    stmt = select(DepositReturn).where(
+        DepositReturn.event_id == event_id, DepositReturn.business_day == day
+    )
+    if standalone_only:
+        stmt = stmt.where(DepositReturn.bill_id.is_(None))
+    return list(db.scalars(stmt.order_by(DepositReturn.created_at.desc())))
+
+
+def delete_deposit_return(db: Session, entry_id: int) -> None:
+    entry = db.get(DepositReturn, entry_id)
+    if entry is None:
+        raise NotFoundError("Pfandrückgabe nicht gefunden")
+    if entry.bill_id is not None:
+        raise ConflictError(
+            "Pfandrückgabe gehört zu einem Bon - dort stornieren"
+        )
+    db.delete(entry)
+    commit(db)
 
 
 # --- Bon-Liste / Detail --------------------------------------------
@@ -157,8 +241,131 @@ def day_summary(db: Session, event_id: int, day: date | None = None) -> DaySumma
     )
 
 
-def close_day(db: Session, event_id: int, day: date | None = None) -> DayClose:
+def get_cash_float(db: Session, event_id: int, day: date | None = None) -> Decimal:
     day = day or business_day()
+    row = db.get(CashFloat, (event_id, day))
+    return row.amount if row else ZERO
+
+
+def set_cash_float(
+    db: Session, event_id: int, amount: Decimal, day: date | None = None
+) -> Decimal:
+    check_money(amount, field="Startgeld")
+    day = day or business_day()
+    row = db.get(CashFloat, (event_id, day))
+    if row is None:
+        row = CashFloat(event_id=event_id, business_day=day, amount=amount)
+        db.add(row)
+    else:
+        row.amount = amount
+    commit(db)
+    return amount
+
+
+# --- Bargeldbewegungen ------------------------------------------
+def list_cash_movements(
+    db: Session, event_id: int, day: date | None = None
+) -> list[CashMovement]:
+    day = day or business_day()
+    return list(
+        db.scalars(
+            select(CashMovement)
+            .where(
+                CashMovement.event_id == event_id, CashMovement.business_day == day
+            )
+            .order_by(CashMovement.created_at, CashMovement.id)
+        )
+    )
+
+
+def add_cash_movement(
+    db: Session,
+    event_id: int,
+    amount: Decimal,
+    reason: str = "",
+    day: date | None = None,
+) -> CashMovement:
+    """Wechselgeld nachlegen (+) oder Geld in den Tresor bringen (−)."""
+    if amount == 0:
+        raise ValidationError("Betrag darf nicht 0 sein")
+    check_money(amount, field="Betrag", allow_negative=True)
+    if db.get(Event, event_id) is None:
+        raise NotFoundError("Veranstaltung nicht gefunden")
+
+    row = CashMovement(
+        event_id=event_id,
+        business_day=day or business_day(),
+        amount=money(amount),
+        reason=clean_text(reason)[:120],
+    )
+    db.add(row)
+    commit(db)
+    db.refresh(row)
+    return row
+
+
+def delete_cash_movement(db: Session, movement_id: int) -> None:
+    row = db.get(CashMovement, movement_id)
+    if row is None:
+        raise NotFoundError("Bargeldbewegung nicht gefunden")
+    db.delete(row)
+    commit(db)
+
+
+def cash_movement_total(db: Session, event_id: int, day: date | None = None) -> Decimal:
+    return sum((m.amount for m in list_cash_movements(db, event_id, day)), ZERO)
+
+
+def cash_count(db: Session, event_id: int, day: date | None = None) -> CashCountOut:
+    """Kassenschnitt: was muss in der Lade sein, was ist drin."""
+    day = day or business_day()
+    event = db.get(Event, event_id)
+    if event is None:
+        raise NotFoundError("Veranstaltung nicht gefunden")
+
+    summary = day_summary(db, event_id, day)
+    returns = list_deposit_returns(db, event_id, day)
+    in_bills = sum((r.total_amount for r in returns if r.bill_id is not None), ZERO)
+    standalone = sum((r.total_amount for r in returns if r.bill_id is None), ZERO)
+
+    # Bareinnahmen = Bon-Summen (Pfandrueckgabe im Bon ist dort schon abgezogen)
+    # minus eigenstaendige Rueckgaben (Geld raus ohne Bon).
+    cash_income = summary.net_total - standalone
+    opening = get_cash_float(db, event_id, day)
+    movements = cash_movement_total(db, event_id, day)
+    marker = db.get(DayClose, (event_id, day))
+    counted = marker.counted_cash if marker else None
+    expected = opening + cash_income + movements
+
+    return CashCountOut(
+        event_id=event_id,
+        event_name=event.name,
+        business_day=day,
+        bill_count=summary.bill_count,
+        total_gross=money(summary.total_gross),
+        total_deposit=money(summary.total_deposit),
+        deposit_return_in_bills=money(in_bills),
+        standalone_deposit_return=money(standalone),
+        cash_income=money(cash_income),
+        opening_float=money(opening),
+        movement_total=money(movements),
+        expected_cash=money(expected),
+        counted_cash=money(counted) if counted is not None else None,
+        difference=money(counted - expected) if counted is not None else None,
+        closed=marker is not None,
+        closed_at=marker.closed_at if marker else None,
+    )
+
+
+def close_day(
+    db: Session,
+    event_id: int,
+    day: date | None = None,
+    counted_cash: Decimal | None = None,
+) -> DayClose:
+    day = day or business_day()
+    if counted_cash is not None:
+        check_money(counted_cash, field="Gezählter Bestand")
     summary = day_summary(db, event_id, day)
     marker = db.get(DayClose, (event_id, day))
     if marker is None:
@@ -166,9 +373,21 @@ def close_day(db: Session, event_id: int, day: date | None = None) -> DayClose:
         db.add(marker)
     marker.total_gross = summary.total_gross
     marker.total_deposit = summary.total_deposit
+    marker.opening_float = get_cash_float(db, event_id, day)
+    if counted_cash is not None:
+        marker.counted_cash = counted_cash
     commit(db)
     db.refresh(marker)
+    _backup_after_close(event_id, day)
     return marker
+
+
+def _backup_after_close(event_id: int, day: date) -> None:
+    """pg_dump in settings.backup_dir. Fehler werden nur geloggt - ein
+    fehlgeschlagenes Backup darf den Tagesabschluss nicht kippen."""
+    from core.backup import dump_database
+
+    dump_database(reason=f"day-close-e{event_id}-{day.isoformat()}")
 
 
 def get_day_close(db: Session, event_id: int, day: date | None = None) -> DayClose:

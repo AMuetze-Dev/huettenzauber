@@ -48,3 +48,20 @@
   flex-wrap: wrap;
   justify-content: flex-end;
 }
+
+.selectField {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.selectField select {
+  min-height: var(--touch);
+  padding: 0 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: #1a1917;
+  color: var(--text);
+  font-size: 14px;
+}

@@ -86,6 +86,10 @@ class StockItem(Base):
     deposit_amount: Mapped[Decimal] = mapped_column(MONEY, server_default="0")
     is_active: Mapped[bool] = mapped_column(Boolean, server_default=text("true"))
     sort_order: Mapped[int] = mapped_column(Integer, server_default="0")
+    # Schnellzugriff-Kachel auf dem Bedienterminal
+    is_favorite: Mapped[bool] = mapped_column(Boolean, server_default=text("false"))
+    # Optionaler Akzent-Farbton der Kachel (#rrggbb), rein optisch
+    color: Mapped[str | None] = mapped_column(String(7), nullable=True)
 
     catalog: Mapped[Catalog] = relationship(back_populates="stock_items")
     category: Mapped[Category | None] = relationship(back_populates="stock_items")
@@ -134,8 +138,7 @@ class Event(Base):
 
 
 class ActiveOrder(Base):
-    """Singleton je aktiver Veranstaltung. Pfandrückgabe als nullable Felder
-    (1:1, kein eigener Zeilen-Lebenszyklus)."""
+    """Singleton je aktiver Veranstaltung."""
 
     __tablename__ = "active_order"
 
@@ -145,12 +148,38 @@ class ActiveOrder(Base):
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
-    deposit_return_unit_amount: Mapped[Decimal | None] = mapped_column(MONEY, nullable=True)
-    deposit_return_quantity: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    # Monoton steigend, damit ein Client zwei ueberholende Antworten
+    # auseinanderhalten kann (10"-Terminal + Handy tippen auf denselben Korb).
+    revision: Mapped[int] = mapped_column(Integer, server_default=text("0"))
 
     lines: Mapped[list[ActiveOrderLine]] = relationship(
         back_populates="order", cascade="all, delete-orphan"
     )
+    deposit_returns: Mapped[list[ActiveDepositReturn]] = relationship(
+        back_populates="order", cascade="all, delete-orphan"
+    )
+
+
+class ActiveDepositReturn(Base):
+    """Pfandrückgabe im laufenden Vorgang - je Pfandbetrag eine Zeile.
+
+    Ein Gast bringt gemischtes Leergut zurück (3 Weingläser à 2,00 €,
+    2 Biergläser à 1,50 €); ein einzelner Betrag pro Vorgang reichte dafür nicht.
+    """
+
+    __tablename__ = "active_deposit_return"
+    __table_args__ = (
+        UniqueConstraint("event_id", "unit_amount", name="uq_active_deposit_unit"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    event_id: Mapped[int] = mapped_column(
+        ForeignKey("active_order.event_id", ondelete="CASCADE"), index=True
+    )
+    unit_amount: Mapped[Decimal] = mapped_column(MONEY)
+    quantity: Mapped[int] = mapped_column(Integer)
+
+    order: Mapped[ActiveOrder] = relationship(back_populates="deposit_returns")
 
 
 class ActiveOrderLine(Base):
@@ -209,6 +238,9 @@ class BillItem(Base):
 
 
 class DepositReturn(Base):
+    """Pfandrueckgabe. `bill_id` gesetzt = im Rahmen eines Bons,
+    `bill_id` NULL = eigenstaendige Rueckgabe (Gast bringt nur Tassen)."""
+
     __tablename__ = "deposit_return"
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -219,13 +251,14 @@ class DepositReturn(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
+    business_day: Mapped[date] = mapped_column(Date, index=True)
     unit_amount: Mapped[Decimal] = mapped_column(MONEY)
     quantity: Mapped[int] = mapped_column(Integer)
     total_amount: Mapped[Decimal] = mapped_column(MONEY)
 
 
 class DayClose(Base):
-    """Reiner Nachschlage-Merker fuer den weichen Tagesabschluss."""
+    """Merker fuer den weichen Tagesabschluss inkl. Kassenbestand."""
 
     __tablename__ = "day_close"
 
@@ -238,3 +271,43 @@ class DayClose(Base):
     )
     total_gross: Mapped[Decimal] = mapped_column(MONEY)
     total_deposit: Mapped[Decimal] = mapped_column(MONEY, server_default="0")
+    # Wechselgeld-Startbestand der Kassenlade (vom Bediener erfasst)
+    opening_float: Mapped[Decimal] = mapped_column(MONEY, server_default="0")
+    # Gezaehlter Ist-Bestand beim Abschluss (optional)
+    counted_cash: Mapped[Decimal | None] = mapped_column(MONEY, nullable=True)
+
+
+class CashMovement(Base):
+    """Bargeld, das ausserhalb des Verkaufs in die Kasse kommt oder sie
+    verlaesst: Wechselgeld nachgelegt (+), Tageslosung in den Tresor (−).
+
+    Ohne diese Zeilen stimmt der Soll-Bestand am Abend nicht mit dem ueberein,
+    was tatsaechlich in der Kasse liegt.
+    """
+
+    __tablename__ = "cash_movement"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    event_id: Mapped[int] = mapped_column(ForeignKey("event.id"), index=True)
+    business_day: Mapped[date] = mapped_column(Date, index=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    # Vorzeichenbehaftet: positiv = Einlage, negativ = Entnahme.
+    amount: Mapped[Decimal] = mapped_column(MONEY)
+    reason: Mapped[str] = mapped_column(String(120), server_default="")
+
+
+class CashFloat(Base):
+    """Startgeld je Veranstaltung + Betriebstag, unabhaengig vom Abschluss."""
+
+    __tablename__ = "cash_float"
+
+    event_id: Mapped[int] = mapped_column(
+        ForeignKey("event.id", ondelete="CASCADE"), primary_key=True
+    )
+    business_day: Mapped[date] = mapped_column(Date, primary_key=True)
+    amount: Mapped[Decimal] = mapped_column(MONEY, server_default="0")
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )

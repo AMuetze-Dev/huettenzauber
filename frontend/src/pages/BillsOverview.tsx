@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, ArrowUUpLeft, Printer, Prohibit } from "@phosphor-icons/react";
+import { ArrowLeft, ArrowUUpLeft, Prohibit } from "@phosphor-icons/react";
 import { api, ApiError } from "../api/client";
 import type { Bill, BillListRow, DaySummary } from "../api/types";
+import { useToast } from "../components/Toast";
 import { Topbar } from "../components/Topbar";
 import styles from "./BillsOverview.module.css";
 import topbar from "../components/Topbar.module.css";
@@ -15,6 +16,8 @@ function hhmm(iso: string): string {
 
 export default function BillsOverview() {
   const navigate = useNavigate();
+  const toast = useToast();
+  const [loading, setLoading] = useState(true);
   const [showVoided, setShowVoided] = useState(false);
   const [rows, setRows] = useState<BillListRow[]>([]);
   const [summary, setSummary] = useState<DaySummary | null>(null);
@@ -40,8 +43,11 @@ export default function BillsOverview() {
       );
     } catch (e) {
       if (e instanceof ApiError && e.status === 409) setNoEvent(true);
+      else if (e instanceof ApiError && !e.isOffline) toast.error(e.detail);
+    } finally {
+      setLoading(false);
     }
-  }, [showVoided]);
+  }, [showVoided, toast]);
 
   useEffect(() => {
     void load();
@@ -66,10 +72,18 @@ export default function BillsOverview() {
   async function toggleVoid() {
     if (selectedId == null || busy || !detail) return;
     setBusy(true);
+    const wasDeleted = detail.is_deleted;
     try {
-      if (detail.is_deleted) await api.restoreBill(selectedId);
+      if (wasDeleted) await api.restoreBill(selectedId);
       else await api.voidBill(selectedId);
       await load();
+      toast.success(
+        wasDeleted
+          ? `Beleg #${selectedId} wieder gültig`
+          : `Beleg #${selectedId} storniert`,
+      );
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.detail : "Fehler");
     } finally {
       setBusy(false);
       setConfirming(false);
@@ -108,7 +122,8 @@ export default function BillsOverview() {
       ) : (
         <div className={styles.body}>
           <div className={styles.list}>
-            {rows.length === 0 && (
+            {loading && <div className={styles.empty}>Wird geladen …</div>}
+            {!loading && rows.length === 0 && (
               <div className={styles.empty}>Noch keine Rechnungen heute.</div>
             )}
             {rows.map((b) => (
@@ -249,13 +264,6 @@ export default function BillsOverview() {
                           Beleg stornieren
                         </button>
                       )}
-                      <button
-                        className={styles.iconBtn}
-                        title="Beleg erneut drucken"
-                        onClick={() => window.print()}
-                      >
-                        <Printer size={18} />
-                      </button>
                     </div>
                   )}
                 </div>

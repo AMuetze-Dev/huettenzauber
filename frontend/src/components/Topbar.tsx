@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import styles from "./Topbar.module.css";
 
 export function Topbar({
-  subtitle = "Landgasthof Diesbar · Ausschank",
+  subtitle = "Landgasthof Zum Ross, Diesbar · Ausschank",
   children,
 }: {
   subtitle?: string;
@@ -10,7 +10,7 @@ export function Topbar({
 }) {
   return (
     <div className={styles.topbar}>
-      <img src="/logo-zum-ross.svg" alt="Zum Roß" />
+      <img src="/logo-zum-ross.svg" alt="Landgasthof Zum Ross" />
       <div className={styles.sep} />
       <span className={styles.place}>{subtitle}</span>
       <span className={styles.grow} />

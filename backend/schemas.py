@@ -1,7 +1,7 @@
-"""Pydantic-v2-DTOs. Stufe 2: nur der Happy-Path (Anlegen + Lesen).
+"""Pydantic-v2-DTOs.
 
-Geld/Mengen als Decimal. Validierung (Preis >= 0 usw.) kommt mit dem
-Fehlermodell in Stufe 3 - hier wird gueltige Eingabe angenommen.
+Geld/Mengen als Decimal (Pydantic weist NaN/Infinity ab). Geschaefts-
+validierung (Betragsgrenzen, Namen, Konflikte) passiert im Service-Layer.
 """
 from __future__ import annotations
 
@@ -38,7 +38,8 @@ class CategoryCreate(BaseModel):
 class CategoryUpdate(BaseModel):
     name: str
     icon: str
-    sort_order: int = 0
+    # None = Position unveraendert lassen (Reihenfolge kommt per /order).
+    sort_order: int | None = None
 
 
 class CategoryOut(BaseModel):
@@ -82,6 +83,8 @@ class StockItemCreate(BaseModel):
     category_id: int | None = None
     deposit_amount: Decimal = Decimal("0")
     sort_order: int = 0
+    is_favorite: bool = False
+    color: str | None = None
     variants: list[VariantCreate] = Field(default_factory=list)
 
 
@@ -89,7 +92,10 @@ class StockItemUpdate(BaseModel):
     name: str
     category_id: int | None = None
     deposit_amount: Decimal = Decimal("0")
-    sort_order: int = 0
+    # None = Position unveraendert lassen (Reihenfolge kommt per /order).
+    sort_order: int | None = None
+    is_favorite: bool = False
+    color: str | None = None
     variants: list[VariantUpsert] = Field(default_factory=list)
 
 
@@ -102,7 +108,13 @@ class StockItemOut(BaseModel):
     deposit_amount: Decimal
     is_active: bool
     sort_order: int
+    is_favorite: bool
+    color: str | None
     variants: list[VariantOut]
+
+
+class FavoriteIn(BaseModel):
+    is_favorite: bool
 
 
 class ReorderIn(BaseModel):
@@ -146,12 +158,20 @@ class ActiveLineOut(BaseModel):
     quantity: Decimal
 
 
+class DepositReturnLineOut(BaseModel):
+    """Eine Pfandsorte im laufenden Vorgang (3× à 2,00 €)."""
+
+    unit_amount: Decimal
+    quantity: int
+    total_amount: Decimal
+
+
 class ActiveOrderOut(BaseModel):
     event_id: int
     updated_at: datetime
+    revision: int
     lines: list[ActiveLineOut]
-    deposit_return_unit_amount: Decimal | None = None
-    deposit_return_quantity: int | None = None
+    deposit_returns: list[DepositReturnLineOut] = Field(default_factory=list)
     total_gross: Decimal
     total_deposit: Decimal
     deposit_return_total: Decimal
@@ -211,6 +231,74 @@ class DayCloseOut(BaseModel):
     closed_at: datetime
     total_gross: Decimal
     total_deposit: Decimal
+    opening_float: Decimal
+    counted_cash: Decimal | None
+
+
+class DayCloseIn(BaseModel):
+    counted_cash: Decimal | None = None
+
+
+# --- Pfandrückgabe (eigenständig) ------------------------------
+class DepositReturnIn2(BaseModel):
+    unit_amount: Decimal
+    quantity: int
+
+
+class DepositReturnOut(BaseModel):
+    model_config = _orm
+    id: int
+    event_id: int
+    bill_id: int | None
+    created_at: datetime
+    business_day: date
+    unit_amount: Decimal
+    quantity: int
+    total_amount: Decimal
+
+
+# --- Kassenschnitt -------------------------------------------
+class CashFloatIn(BaseModel):
+    amount: Decimal
+
+
+class CashMovementIn(BaseModel):
+    """Vorzeichenbehaftet: positiv = Einlage, negativ = Entnahme."""
+
+    amount: Decimal
+    reason: str = ""
+
+
+class CashMovementOut(BaseModel):
+    model_config = _orm
+    id: int
+    event_id: int
+    business_day: date
+    created_at: datetime
+    amount: Decimal
+    reason: str
+
+
+class CashCountOut(BaseModel):
+    """Alles, was der Kassenschnitt braucht - eine Anfrage, ein Bild."""
+
+    event_id: int
+    event_name: str
+    business_day: date
+    bill_count: int
+    total_gross: Decimal
+    total_deposit: Decimal
+    deposit_return_in_bills: Decimal
+    standalone_deposit_return: Decimal
+    cash_income: Decimal
+    opening_float: Decimal
+    # Summe aller Einlagen/Entnahmen des Tages (vorzeichenbehaftet).
+    movement_total: Decimal
+    expected_cash: Decimal
+    counted_cash: Decimal | None
+    difference: Decimal | None
+    closed: bool
+    closed_at: datetime | None
 
 
 # --- Statistik ---------------------------------------------------------

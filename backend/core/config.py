@@ -27,6 +27,12 @@ class Settings(BaseSettings):
     business_timezone: str = "Europe/Berlin"
     # Erlaubte CORS-Origins, kommagetrennt. Default deckt Dev ab.
     cors_origins: str = "http://localhost:3000,http://localhost"
+    # Optionaler Zugangscode fuer schreibende Endpunkte (offener Pi-Hotspot).
+    # Leer = kein Schutz (Default, damit Dev unveraendert laeuft).
+    access_code: str = ""
+    # Verzeichnis fuer automatische pg_dump-Sicherungen beim Tagesabschluss.
+    # Leer = kein Backup.
+    backup_dir: str = ""
 
     @property
     def cors_origin_list(self) -> list[str]:

@@ -9,6 +9,7 @@ from schemas import (
     CategoryCreate,
     CategoryOut,
     CategoryUpdate,
+    FavoriteIn,
     ReorderIn,
     StockItemCreate,
     StockItemOut,
@@ -44,6 +45,17 @@ def update_catalog(catalog_id: int, payload: CatalogUpdate, db: Session = Depend
 @router.delete("/catalogs/{catalog_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_catalog(catalog_id: int, db: Session = Depends(get_db)):
     service.delete_catalog(db, catalog_id)
+
+
+@router.post(
+    "/catalogs/{catalog_id}/duplicate",
+    response_model=CatalogOut,
+    status_code=status.HTTP_201_CREATED,
+)
+def duplicate_catalog(
+    catalog_id: int, payload: CatalogCreate, db: Session = Depends(get_db)
+):
+    return service.duplicate_catalog(db, catalog_id, payload.name)
 
 
 # --- Kategorie -----------------------------------------------------
@@ -102,9 +114,19 @@ def reorder_stock_items(catalog_id: int, payload: ReorderIn, db: Session = Depen
     return service.reorder_stock_items(db, catalog_id, payload.ordered_ids)
 
 
+@router.get("/catalogs/{catalog_id}/favorites", response_model=list[StockItemOut])
+def list_favorites(catalog_id: int, db: Session = Depends(get_db)):
+    return service.list_favorites(db, catalog_id)
+
+
 @router.get("/stock-items/{item_id}", response_model=StockItemOut)
 def get_stock_item(item_id: int, db: Session = Depends(get_db)):
     return service.get_stock_item(db, item_id)
+
+
+@router.put("/stock-items/{item_id}/favorite", response_model=StockItemOut)
+def set_favorite(item_id: int, payload: FavoriteIn, db: Session = Depends(get_db)):
+    return service.set_favorite(db, item_id, payload.is_favorite)
 
 
 @router.put("/stock-items/{item_id}", response_model=StockItemOut)

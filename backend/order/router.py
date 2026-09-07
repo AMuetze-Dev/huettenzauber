@@ -28,10 +28,23 @@ def apply_line_delta(payload: LineDelta, db: Session = Depends(get_db)):
     return service.apply_delta(db, event.id, payload.variant_id, payload.delta)
 
 
+@router.delete("", response_model=ActiveOrderOut)
+def clear_active_order(db: Session = Depends(get_db)):
+    event = require_active_event(db)
+    return service.clear_order(db, event.id)
+
+
 @router.put("/deposit-return", response_model=ActiveOrderOut)
 def set_deposit_return(payload: DepositReturnIn, db: Session = Depends(get_db)):
+    """Setzt die Stueckzahl fuer einen Pfandbetrag; andere Betraege bleiben."""
     event = require_active_event(db)
     return service.set_deposit_return(db, event.id, payload.unit_amount, payload.quantity)
+
+
+@router.delete("/deposit-return", response_model=ActiveOrderOut)
+def clear_deposit_returns(db: Session = Depends(get_db)):
+    event = require_active_event(db)
+    return service.clear_deposit_returns(db, event.id)
 
 
 @router.get("/stream")
@@ -40,6 +53,11 @@ async def stream(db: Session = Depends(get_db)):
     Nach dem ersten Read kein DB-Zugriff mehr - nur die In-Process-Queue."""
     event = require_active_event(db)
     initial = service.view(db, event.id).model_dump(mode="json")
+    # Transaktion sofort beenden und die Verbindung an den Pool zurueckgeben.
+    # Die Dependency haelt die Session sonst ueber die gesamte Stream-Dauer -
+    # zwei Displays plus Handy blockierten damit dauerhaft drei Verbindungen
+    # als "idle in transaction" und jedes `alembic upgrade` lief in den Lock.
+    db.commit()
 
     async def gen():
         yield f"data: {json.dumps(initial)}\n\n"

@@ -1,8 +1,14 @@
 /**
- * Lokaler, optimistischer Warenkorb des Bedienterminals (10").
- * Wahrheit liegt im Backend (active_order + SSE) - dieser Reducer sorgt nur
- * fuer sofortiges Feedback beim Tippen. Referenzlogik: die `Component`-Klasse
- * im Designer-Mockup (design/mockup-pos.dc.html).
+ * Warenkorb des Bedienterminals (10").
+ *
+ * Wahrheit liegt im Backend (`active_order` + SSE). Lokal wird nur sofort
+ * mitgezeichnet, damit ein Tipp nicht auf die Antwort warten muss.
+ *
+ * Der Server nummeriert jeden Stand (`revision`). Angewandt wird nur ein
+ * Stand, der neuer ist als der zuletzt gesehene - damit
+ *  - sich ueberholende Antworten keine Position verschlucken,
+ *  - ein zweiter Eingabepunkt (Handy im Hotspot) hier von selbst auftaucht,
+ *  - und der eigene, noch nicht bestaetigte Tipp nicht kurz wegblinkt.
  */
 
 export interface CartLine {
@@ -15,32 +21,72 @@ export interface CartLine {
   qty: number;
 }
 
+/** Eine Pfandsorte im Vorgang: 3 Weingläser à 2,00 €. */
 export interface DepositReturn {
   unitAmount: number;
   quantity: number;
 }
 
+/** Metadaten zu einer Variante - kommt aus dem geladenen Katalog. */
+export type LineLookup = (variantId: number) => Omit<CartLine, "qty"> | null;
+
 export interface CartState {
   lines: CartLine[];
   lastVariantId: number | null;
-  depositReturn: DepositReturn | null;
+  /** Je Pfandbetrag eine Zeile - gemischtes Leergut in einem Vorgang. */
+  depositReturns: DepositReturn[];
+  /** Zuletzt uebernommener Serverstand. */
+  revision: number;
 }
 
 export type CartAction =
   | { type: "bump"; line: Omit<CartLine, "qty">; step: number }
+  | { type: "bumpFailed"; variantId: number; step: number }
   | { type: "setQty"; variantId: number; qty: number }
   | { type: "remove"; variantId: number }
   | { type: "clear" }
   | { type: "setDepositReturn"; unitAmount: number; quantity: number }
-  | { type: "syncLines"; lines: { variantId: number; qty: number }[] };
+  | { type: "clearDepositReturns" }
+  /** Katalog kam später als der erste Serverstand - Namen/Preise nachziehen. */
+  | { type: "relabel"; lookup: LineLookup }
+  | {
+      type: "serverSnapshot";
+      revision: number;
+      lines: { variantId: number; qty: number }[];
+      depositReturns: DepositReturn[];
+      lookup: LineLookup;
+    };
 
 export const emptyCart: CartState = {
   lines: [],
   lastVariantId: null,
-  depositReturn: null,
+  depositReturns: [],
+  revision: -1,
 };
 
-function withLines(state: CartState, lines: CartLine[], last?: number | null): CartState {
+/** Auf ganze Cent runden, damit 2,00 und 2,001 dieselbe Sorte sind. */
+function cents(value: number): number {
+  return Math.round(value * 100) / 100;
+}
+
+/** Position, deren Artikel der Client (noch) nicht kennt - lieber sichtbar
+ *  falsch benannt als unsichtbar. */
+function placeholder(variantId: number): Omit<CartLine, "qty"> {
+  return {
+    variantId,
+    stockItemId: 0,
+    itemName: `Artikel #${variantId}`,
+    variantLabel: "",
+    unitPrice: 0,
+    deposit: 0,
+  };
+}
+
+function withLines(
+  state: CartState,
+  lines: CartLine[],
+  last?: number | null,
+): CartState {
   return {
     ...state,
     lines: lines.filter((l) => l.qty > 0),
@@ -66,12 +112,23 @@ export function cartReducer(state: CartState, action: CartAction): CartState {
       return withLines(state, lines, step > 0 ? line.variantId : state.lastVariantId);
     }
 
-    case "setQty": {
-      const lines = state.lines.map((l) =>
-        l.variantId === action.variantId ? { ...l, qty: Math.max(0, action.qty) } : l,
+    case "bumpFailed":
+      return withLines(
+        state,
+        state.lines.map((l) =>
+          l.variantId === action.variantId ? { ...l, qty: l.qty - action.step } : l,
+        ),
       );
-      return withLines(state, lines);
-    }
+
+    case "setQty":
+      return withLines(
+        state,
+        state.lines.map((l) =>
+          l.variantId === action.variantId
+            ? { ...l, qty: Math.max(0, action.qty) }
+            : l,
+        ),
+      );
 
     case "remove":
       return withLines(
@@ -80,25 +137,58 @@ export function cartReducer(state: CartState, action: CartAction): CartState {
       );
 
     case "clear":
-      return { ...emptyCart };
+      return { ...emptyCart, revision: state.revision };
 
     case "setDepositReturn": {
-      const { unitAmount, quantity } = action;
+      const unitAmount = cents(action.unitAmount);
+      const quantity = action.quantity;
+      const rest = state.depositReturns.filter((d) => d.unitAmount !== unitAmount);
       return {
         ...state,
-        depositReturn:
-          unitAmount <= 0 || quantity <= 0 ? null : { unitAmount, quantity },
+        depositReturns:
+          unitAmount <= 0 || quantity <= 0
+            ? rest
+            : [...rest, { unitAmount, quantity }].sort(
+                (a, b) => a.unitAmount - b.unitAmount,
+              ),
       };
     }
 
-    case "syncLines": {
+    case "clearDepositReturns":
+      return { ...state, depositReturns: [] };
+
+    case "relabel": {
+      // Beim Start kann der Serverstand vor dem Katalog eintreffen; die
+      // Positionen stehen dann als Platzhalter zu 0,00 € da.
+      let changed = false;
+      const lines = state.lines.map((l) => {
+        const meta = action.lookup(l.variantId);
+        if (!meta || meta.unitPrice === l.unitPrice) return l;
+        changed = true;
+        return { ...meta, qty: l.qty };
+      });
+      return changed ? { ...state, lines } : state;
+    }
+
+    case "serverSnapshot": {
+      // Ueberholte oder doppelte Nachricht: verwerfen.
+      if (action.revision <= state.revision) return state;
       const known = new Map(state.lines.map((l) => [l.variantId, l]));
-      const lines: CartLine[] = [];
-      for (const s of action.lines) {
-        const base = known.get(s.variantId);
-        if (base) lines.push({ ...base, qty: s.qty });
-      }
-      return withLines(state, lines);
+      const lines = action.lines.map((s) => {
+        const meta =
+          action.lookup(s.variantId) ??
+          known.get(s.variantId) ??
+          placeholder(s.variantId);
+        return { ...meta, variantId: s.variantId, qty: s.qty };
+      });
+      return withLines(
+        {
+          ...state,
+          revision: action.revision,
+          depositReturns: action.depositReturns,
+        },
+        lines,
+      );
     }
 
     default:
@@ -117,9 +207,10 @@ export interface CartTotals {
 export function cartTotals(state: CartState): CartTotals {
   const gross = state.lines.reduce((a, l) => a + l.unitPrice * l.qty, 0);
   const deposit = state.lines.reduce((a, l) => a + l.deposit * l.qty, 0);
-  const depositReturn = state.depositReturn
-    ? state.depositReturn.unitAmount * state.depositReturn.quantity
-    : 0;
+  const depositReturn = state.depositReturns.reduce(
+    (a, d) => a + d.unitAmount * d.quantity,
+    0,
+  );
   return {
     gross,
     deposit,

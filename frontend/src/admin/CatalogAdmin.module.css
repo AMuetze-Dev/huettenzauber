@@ -153,3 +153,167 @@
   flex-direction: column;
   gap: 10px;
 }
+
+.fieldLabel {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* Kategorie-Symbol */
+.catIcon {
+  width: 34px;
+  height: 34px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: #1a1917;
+  color: var(--accent);
+}
+.iconPreview {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 14px;
+  border-radius: var(--radius-tile);
+  border: 1px solid var(--border-active);
+  background: var(--tile-active);
+}
+.iconPreviewTile {
+  width: 56px;
+  height: 56px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-tile);
+  background: var(--tile-active-strong);
+  color: #f0e4cd;
+}
+.iconPreviewName {
+  font-size: 15px;
+  font-weight: 500;
+}
+.iconPreviewHint {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.iconGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(var(--touch), 1fr));
+  gap: 8px;
+}
+.iconChoice {
+  min-height: var(--touch);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--tile);
+  color: var(--text-muted);
+}
+.iconChoiceSel {
+  background: var(--tile-active-strong);
+  border-color: var(--border-focus);
+  color: #f0e4cd;
+}
+.selectField {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.selectField select {
+  min-height: var(--touch);
+  padding: 0 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: #1a1917;
+  color: var(--text);
+  font-size: 14px;
+}
+
+/* Schnellzugriff-Schalter */
+.favToggle {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 56px;
+  padding: 10px 14px;
+  border-radius: var(--radius-tile);
+  border: 1px solid var(--border);
+  background: var(--tile);
+  color: var(--text-muted);
+  text-align: left;
+}
+.favToggle span {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.favToggle b {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
+}
+.favToggle small {
+  font-size: 12px;
+  line-height: 1.35;
+}
+.favOn {
+  border-color: var(--border-focus);
+  background: var(--tile-active);
+  color: var(--accent);
+}
+
+/* Farbwahl */
+.colorField {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.colorRow {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.swatch {
+  width: var(--touch);
+  height: var(--touch);
+  border-radius: var(--radius-sm);
+  border: 2px solid transparent;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.35);
+}
+.swatchSel {
+  border-color: var(--text);
+}
+.noColor {
+  background: #1a1917;
+  position: relative;
+  box-shadow: inset 0 0 0 1px var(--border);
+}
+.noColor::after {
+  content: "";
+  position: absolute;
+  inset: 10px;
+  border-top: 1px solid var(--text-dim);
+  transform: rotate(-45deg);
+  transform-origin: center;
+}
+
+/* Marker in der Artikelliste */
+.itemColor {
+  width: 6px;
+  align-self: stretch;
+  border-radius: 3px;
+  flex: none;
+}
+.favTag {
+  display: inline-flex;
+  align-items: center;
+  color: var(--accent);
+}

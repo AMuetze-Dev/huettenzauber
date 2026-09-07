@@ -13,6 +13,25 @@ interface VariantInfo {
 
 const VISIBLE = 7;
 
+/** Ruhebild: laeuft stundenlang auf dem 7"-Display, darf also nicht flimmern
+ *  und keine feste Grafik einbrennen - deshalb nur die wandernde Uhrzeit. */
+function Idle() {
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const t = window.setInterval(() => setNow(new Date()), 20_000);
+    return () => window.clearInterval(t);
+  }, []);
+  return (
+    <div className={styles.welcome}>
+      <span className={`${styles.clock} tnum`}>
+        {now.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })}
+      </span>
+      <h1>Willkommen</h1>
+      <p>Ihre Bestellung erscheint hier, sobald sie aufgenommen wird.</p>
+    </div>
+  );
+}
+
 export default function GuestDisplay() {
   const { order } = useActiveOrderStream();
   const [variantMap, setVariantMap] = useState<Map<number, VariantInfo>>(new Map());
@@ -58,16 +77,13 @@ export default function GuestDisplay() {
   return (
     <div className={`${styles.screen} no-select`}>
       <div className={styles.header}>
-        <img src="/logo-zum-ross.svg" alt="Zum Roß" />
-        <span className={styles.kicker}>Landgasthof Diesbar</span>
+        <img src="/logo-zum-ross.svg" alt="Landgasthof Zum Ross" />
+        <span className={styles.kicker}>Landgasthof Zum Ross · Diesbar</span>
         <span className={`${styles.kicker} ${styles.right}`}>Ihre Bestellung</span>
       </div>
 
       {isEmpty ? (
-        <div className={styles.welcome}>
-          <h1>Willkommen</h1>
-          <p>Ihre Bestellung erscheint hier, sobald sie aufgenommen wird.</p>
-        </div>
+        <Idle />
       ) : (
         <div className={styles.body}>
           <div className={styles.lines}>
