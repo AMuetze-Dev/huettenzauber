@@ -1,1 +1,1 @@
-export const api = process.env.REACT_APP_API_URL || "http://pi5:8000";
+export const api = process.env.REACT_APP_API_URL || "http://192.168.189.162:8000";
