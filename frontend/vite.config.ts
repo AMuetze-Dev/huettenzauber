@@ -10,6 +10,10 @@ export default defineConfig({
   server: {
     host: true,
     port: 3000,
+    // Zweites Geraet im selben Netz (Handy als zusaetzlicher Eingabepunkt):
+    // Vite weist fremde Host-Namen sonst mit 403 ab. Nur der Dev-Server im
+    // lokalen Netz - die Produktion laeuft ueber nginx im Frontend-Container.
+    allowedHosts: true,
     // Bind-Mount auf Docker Desktop (Windows): Datei-Events kommen nicht durch -> pollen.
     watch: { usePolling: true, interval: 300 },
     proxy: {

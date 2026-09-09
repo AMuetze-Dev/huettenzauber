@@ -15,8 +15,10 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
-lib64/
+# Nur das Python-lib/ im Wurzelverzeichnis - "lib/" ohne Schraegstrich davor
+# fing auch frontend/src/lib/ ab, wodurch money.ts unversioniert blieb.
+/lib/
+/lib64/
 parts/
 sdist/
 var/
@@ -270,8 +272,7 @@ build/
 .eslintcache
 
 # === DOCKER ===
-# Docker files that might contain sensitive information
-.dockerignore
+# .dockerignore gehoert zum Build-Kontext und muss mit ins Repo.
 docker-compose.override.yml
 
 # === IDE / EDITOR ===

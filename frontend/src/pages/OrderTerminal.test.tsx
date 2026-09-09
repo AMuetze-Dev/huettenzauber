@@ -156,6 +156,7 @@ describe("OrderTerminal", () => {
     vi.spyOn(api, "clearDepositReturns").mockResolvedValue(order(2));
     vi.spyOn(api, "createDepositReturn");
     vi.spyOn(api, "createBill");
+    vi.spyOn(api, "addCashMovement");
   });
   afterEach(() => {
     vi.restoreAllMocks();
@@ -451,9 +452,20 @@ describe("OrderTerminal", () => {
     fireEvent.click(screen.getByRole("button", { name: /Bar kassieren – 8,00/ }));
   }
 
+  /** Stückelung antippen, wie der Gast sie auf den Tresen legt. */
+  const legeHin = (...scheine: string[]) => {
+    // Betrag ohne Waehrungszeichen - euro() setzt ein geschuetztes Leerzeichen.
+    for (const v of scheine)
+      fireEvent.click(
+        within(payDialog()).getByRole("button", {
+        name: new RegExp(`^${v}.*dazulegen$`),
+      }),
+      );
+  };
+
   it("zeigt den fälligen Betrag", async () => {
     await openPay();
-    expect(within(payDialog()).getByText("8,00 €")).toBeInTheDocument();
+    expect(within(payDialog()).getAllByText("8,00 €").length).toBeGreaterThan(0);
   });
 
   it("ohne Angabe steht der Abschluss auf „passend erhalten“", async () => {
@@ -463,31 +475,98 @@ describe("OrderTerminal", () => {
     ).toBeInTheDocument();
   });
 
-  it("Schein wählen rechnet das Rückgeld aus", async () => {
+  it("„passend“ setzt genau den fälligen Betrag", async () => {
+    await openPay();
+    fireEvent.click(within(payDialog()).getByText("passend").closest("button")!);
+    expect(within(payDialog()).getByText("Rückgeld")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /Abschließen · 0,00.*zurück/ }),
+    ).toBeInTheDocument();
+  });
+
+  it("schlägt die Beträge vor, die Gäste typischerweise hinlegen", async () => {
+    // 8,00 € fällig -> 10 und 15
     await openPay();
     const pay = payDialog();
-    fireEvent.click(within(pay).getByText("20,00 €").closest("button")!);
-    expect(within(pay).getByText("Rückgeld")).toBeInTheDocument();
-    expect(within(pay).getByText("12,00 €")).toBeInTheDocument();
+    expect(within(pay).getByText("10 €")).toBeInTheDocument();
+    expect(within(pay).getByText("15 €")).toBeInTheDocument();
   });
 
-  it("Scheine unter dem fälligen Betrag sind gesperrt", async () => {
-    await mount();
-    push(order(5, [[11, 3]])); // 12,00 €
-    await wartAufKorb(/3 Artikel/);
-    fireEvent.click(screen.getByRole("button", { name: /Bar kassieren – 12,00/ }));
+  it("ein Vorschlag rechnet das Rückgeld aus", async () => {
+    await openPay();
     const pay = payDialog();
-    expect(within(pay).getByText("10,00 €").closest("button")).toBeDisabled();
-    expect(within(pay).getByText("20,00 €").closest("button")).toBeEnabled();
+    fireEvent.click(within(pay).getByText("15 €").closest("button")!);
+    expect(within(pay).getByText("Rückgeld")).toBeInTheDocument();
+    expect(within(pay).getByText("7,00 €")).toBeInTheDocument();
   });
 
-  it("freie Eingabe unter dem Betrag meldet den Fehlbetrag", async () => {
+  it("Stückelung addiert sich – 20 + 20 + 5 = 45", async () => {
+    await openPay();
+    legeHin("20 €", "20 €", "5 €");
+    const pay = payDialog();
+    expect(within(pay).getByText("45,00 €")).toBeInTheDocument(); // erhalten
+    expect(within(pay).getByText("37,00 €")).toBeInTheDocument(); // zurück
+  });
+
+  it("krumme Beträge gehen auch – 40 + 2 bei 8,00 €", async () => {
+    await openPay();
+    legeHin("20 €", "20 €", "2 €");
+    expect(within(payDialog()).getByText("42,00 €")).toBeInTheDocument();
+  });
+
+  it("Münzen zählen mit", async () => {
+    await openPay();
+    legeHin("5 €", "2 €", "1 €", "50 ct");
+    expect(within(payDialog()).getByText("8,50 €")).toBeInTheDocument();
+    expect(within(payDialog()).getByText("0,50 €")).toBeInTheDocument();
+  });
+
+  it("zu wenig hingelegt meldet den Fehlbetrag", async () => {
+    await openPay();
+    legeHin("5 €");
+    const pay = payDialog();
+    expect(within(pay).getByText("Es fehlen noch")).toBeInTheDocument();
+    expect(within(pay).getByText("3,00 €")).toBeInTheDocument();
+  });
+
+  it("Zurücksetzen räumt den erhaltenen Betrag weg", async () => {
+    await openPay();
+    legeHin("20 €");
+    fireEvent.click(
+      within(payDialog()).getByRole("button", {
+        name: "Erhaltenen Betrag zurücksetzen",
+      }),
+    );
+    expect(
+      screen.getByRole("button", { name: /Passend erhalten · abschließen/ }),
+    ).toBeInTheDocument();
+  });
+
+  it("Zurücksetzen ist ohne Eingabe gesperrt", async () => {
+    await openPay();
+    expect(
+      within(payDialog()).getByRole("button", {
+        name: "Erhaltenen Betrag zurücksetzen",
+      }),
+    ).toBeDisabled();
+  });
+
+  it("freie Eingabe für alles Krumme", async () => {
     await openPay();
     const pay = payDialog();
     fireEvent.click(within(pay).getByText("Betrag").closest("button")!);
     fireEvent.click(within(pay).getByRole("button", { name: "5" }));
-    expect(within(pay).getByText("Es fehlen noch")).toBeInTheDocument();
-    expect(within(pay).getByText("3,00 €")).toBeInTheDocument();
+    fireEvent.click(within(pay).getByRole("button", { name: "0" }));
+    fireEvent.click(within(pay).getByRole("button", { name: /übernehmen/ }));
+    expect(within(payDialog()).getByText("50,00 €")).toBeInTheDocument();
+    expect(within(payDialog()).getByText("42,00 €")).toBeInTheDocument();
+  });
+
+  it("freie Eingabe lässt sich abbrechen", async () => {
+    await openPay();
+    fireEvent.click(within(payDialog()).getByText("Betrag").closest("button")!);
+    fireEvent.click(within(payDialog()).getByRole("button", { name: "Abbrechen" }));
+    expect(within(payDialog()).getByText("passend")).toBeInTheDocument();
   });
 
   it("Abschließen legt den Bon an und leert den Korb", async () => {
@@ -506,6 +585,70 @@ describe("OrderTerminal", () => {
     fireEvent.click(screen.getByRole("button", { name: /Passend erhalten/ }));
     expect(await screen.findByText(/Bon #42/)).toBeInTheDocument();
     expect(cartBtn()).toHaveAccessibleName(/0 Artikel/);
+  });
+
+  const bonMock = () =>
+    vi.mocked(api.createBill).mockResolvedValue({
+      id: 42,
+      event_id: 1,
+      created_at: "2026-09-07T12:00:00Z",
+      business_day: "2026-09-07",
+      is_deleted: false,
+      total_gross: "8.00",
+      total_deposit: "0.00",
+      deposit_return_total: "0.00",
+      items: [],
+    });
+
+  // --- Trinkgeld -------------------------------------------------
+  it("ohne Rest gibt es keinen Trinkgeld-Knopf", async () => {
+    await openPay();
+    fireEvent.click(within(payDialog()).getByText("passend").closest("button")!);
+    expect(screen.queryByRole("button", { name: /Trinkgeld/ })).toBeNull();
+  });
+
+  it("bleibt etwas übrig, lässt sich „stimmt so“ buchen", async () => {
+    bonMock();
+    vi.mocked(api.addCashMovement).mockResolvedValue({
+      id: 1,
+      event_id: 1,
+      business_day: "2026-09-07",
+      created_at: "2026-09-07T12:00:00Z",
+      amount: "2.00",
+      reason: "Trinkgeld",
+    });
+    await openPay();
+    legeHin("10 €"); // 8,00 fällig -> 2,00 Rest
+    fireEvent.click(screen.getByRole("button", { name: /Stimmt so · 2,00.*Trinkgeld/ }));
+    await waitFor(() => expect(api.createBill).toHaveBeenCalled());
+    expect(api.addCashMovement).toHaveBeenCalledWith("2.00", "Trinkgeld");
+  });
+
+  it("normales Abschließen bucht kein Trinkgeld", async () => {
+    bonMock();
+    await openPay();
+    legeHin("10 €");
+    fireEvent.click(screen.getByRole("button", { name: /Abschließen · 2,00.*zurück/ }));
+    await waitFor(() => expect(api.createBill).toHaveBeenCalled());
+    expect(api.addCashMovement).not.toHaveBeenCalled();
+  });
+
+  it("scheitert nur die Trinkgeld-Buchung, steht der Bon trotzdem", async () => {
+    bonMock();
+    vi.mocked(api.addCashMovement).mockRejectedValue(new ApiError(0, "weg"));
+    await openPay();
+    legeHin("10 €");
+    fireEvent.click(screen.getByRole("button", { name: /Stimmt so/ }));
+    expect(await screen.findByText(/Bon #42/)).toBeInTheDocument();
+    expect(
+      await screen.findByText(/Trinkgeld 2,00.*nicht gebucht/),
+    ).toBeInTheDocument();
+  });
+
+  it("bei zu wenig Geld gibt es keinen Trinkgeld-Knopf", async () => {
+    await openPay();
+    legeHin("5 €");
+    expect(screen.queryByRole("button", { name: /Stimmt so/ })).toBeNull();
   });
 
   it("scheitert der Bon, bleibt der Korb stehen", async () => {

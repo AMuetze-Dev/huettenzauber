@@ -1,7 +1,7 @@
 import { useState } from "react";
 import type { Category } from "../api/types";
 import { Button, ErrorText, Field, Modal } from "../components/ui";
-import { CATEGORY_ICONS, iconKeyFor } from "../order/catIcon";
+import { CATEGORY_ICONS, ICON_GROUPS, iconKeyFor } from "../order/catIcon";
 import s from "./CatalogAdmin.module.css";
 
 export interface CategoryDraft {
@@ -82,20 +82,29 @@ export function CategoryEditor({
         />
 
         <div className={s.fieldLabel}>Symbol</div>
-        <div className={s.iconGrid} role="radiogroup" aria-label="Symbol">
-          {CATEGORY_ICONS.map(({ key, label, Icon }) => (
-            <button
-              key={key}
-              type="button"
-              role="radio"
-              aria-checked={icon === key}
-              aria-label={label}
-              title={label}
-              className={`${s.iconChoice} ${icon === key ? s.iconChoiceSel : ""}`}
-              onClick={() => setIcon(key)}
-            >
-              <Icon size={22} />
-            </button>
+        <div className={s.iconPicker} role="radiogroup" aria-label="Symbol">
+          {ICON_GROUPS.map((group) => (
+            <div key={group} className={s.iconGroup}>
+              <div className={s.iconGroupLabel}>{group}</div>
+              <div className={s.iconGrid}>
+                {CATEGORY_ICONS.filter((c) => c.group === group).map(
+                  ({ key, label, Icon }) => (
+                    <button
+                      key={key}
+                      type="button"
+                      role="radio"
+                      aria-checked={icon === key}
+                      aria-label={label}
+                      title={label}
+                      className={`${s.iconChoice} ${icon === key ? s.iconChoiceSel : ""}`}
+                      onClick={() => setIcon(key)}
+                    >
+                      <Icon size={22} />
+                    </button>
+                  ),
+                )}
+              </div>
+            </div>
           ))}
         </div>
         <ErrorText>{err}</ErrorText>

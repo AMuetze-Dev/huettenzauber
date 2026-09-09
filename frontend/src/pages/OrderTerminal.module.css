@@ -576,7 +576,7 @@
   overflow-y: auto;
   background: var(--chrome);
   border-radius: 16px;
-  padding: 22px 24px 20px;
+  padding: 18px 22px 16px;
   border: 1px solid #7d766c;
 }
 .payHead {
@@ -589,10 +589,10 @@
   font-weight: 500;
 }
 .payBig {
-  font-size: 52px;
+  font-size: 40px;
   font-weight: 500;
   letter-spacing: -0.03em;
-  margin: 14px 0 20px;
+  margin: 8px 0 12px;
 }
 .payBig small {
   font-size: 13px;
@@ -600,48 +600,165 @@
   margin-left: 12px;
   font-weight: 400;
 }
-.changeGrid {
+/* Vorschlaege: passend + die Betraege, die Gaeste typischerweise hinlegen */
+.quickRow {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
   gap: 9px;
-  margin-bottom: 10px;
+  margin-bottom: 9px;
 }
-.changeBtn {
-  height: 74px;
+.quickBtn {
+  min-height: 58px;
   border-radius: 11px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 5px;
+  gap: 4px;
+  padding: 0 6px;
   border: 1px solid var(--border);
   background: var(--tile);
+  overflow: hidden;
 }
-.changeBtn:disabled {
-  color: var(--text-dim);
-  background: none;
+.quickBtn b {
+  font-size: 16px;
+  font-weight: 600;
+  white-space: nowrap;
 }
-.changeBtn.sel {
+.quickBtn small {
+  font-size: 10.5px;
+  opacity: 0.7;
+  white-space: nowrap;
+}
+.quickBtn.sel {
   background: var(--tile-active-strong);
   border-color: var(--border-focus);
   color: #f0e4cd;
 }
-.changeBtn b {
-  font-size: 16px;
+
+/* Stückelung: antippen, was der Gast auf den Tresen legt - summiert sich.
+   Scheine eckig, Münzen rund; das trennt die beiden Gruppen ohne zweite
+   Zeile, die hier keinen Platz hätte. */
+.denomRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.denomLabel {
+  flex: none;
+  font-size: 10px;
+  line-height: 1.15;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  text-align: right;
+}
+.denomGroup {
+  display: flex;
+  gap: 6px;
+}
+.denomSep {
+  flex: none;
+  width: 1px;
+  align-self: stretch;
+  margin: 2px 1px;
+  background: rgba(236, 233, 228, 0.16);
+}
+
+.noteBtn,
+.coinBtn {
+  display: inline-flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 2px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
   font-weight: 600;
 }
-.changeBtn small {
-  font-size: 10.5px;
+.noteBtn small,
+.coinBtn small {
+  font-size: 10px;
+  font-weight: 500;
   opacity: 0.7;
 }
 
+/* Schein: liegender Rahmen, warm hinterlegt */
+.noteBtn {
+  min-width: 54px;
+  height: var(--touch);
+  padding: 0 4px;
+  border-radius: 7px;
+  border: 1px solid var(--border-active);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--accent) 16%, var(--tile)),
+    var(--tile)
+  );
+  font-size: 17px;
+}
+
+/* Münze: rund */
+.coinBtn {
+  width: var(--touch);
+  height: var(--touch);
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--tile);
+  font-size: 15px;
+}
+
+.noteBtn:active,
+.coinBtn:active {
+  background: var(--tile-active-strong);
+  border-color: var(--border-focus);
+  color: #f0e4cd;
+}
+
+.denomReset {
+  flex: none;
+  margin-left: auto;
+  width: var(--touch);
+  height: var(--touch);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: none;
+  color: var(--text-muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.denomReset:disabled {
+  opacity: 0.3;
+}
+
 .payPad {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
   margin-bottom: 10px;
+}
+.payPadRow {
+  display: flex;
+  gap: 8px;
+}
+.ghostWide {
+  flex: 1;
+  min-height: var(--touch);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-active);
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 500;
+}
+.ghostWide:disabled {
+  opacity: 0.4;
+  border-color: var(--border);
 }
 
 /* Rueckgeld-Anzeige: das, was der Bediener dem Gast in die Hand zaehlt */
 .changeBox {
-  min-height: 72px;
+  min-height: 62px;
   display: flex;
   align-items: center;
   gap: 12px;
@@ -659,11 +776,25 @@
   font-size: 13px;
   color: var(--text-muted);
 }
-.changeLabel {
+.changeInfo {
   flex: 1;
-  font-size: 14px;
-  font-weight: 500;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.changeGot {
+  font-size: 12.5px;
   color: var(--text-muted);
+}
+.changeGot b {
+  color: var(--text);
+  font-weight: 600;
+}
+.changeLabel {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text);
 }
 .changeValue {
   font-size: 34px;
@@ -721,7 +852,7 @@
 }
 .secondaryBtn {
   width: 100%;
-  min-height: 56px;
+  min-height: 50px;
   margin-top: 8px;
   border-radius: 12px;
   display: flex;
@@ -778,7 +909,7 @@
 
 .confirmBtn {
   width: 100%;
-  height: 64px;
+  height: 60px;
   border-radius: 12px;
   display: flex;
   align-items: center;
@@ -797,8 +928,8 @@
 }
 .backBtn {
   width: 100%;
-  height: 44px;
-  margin-top: 8px;
+  height: 40px;
+  margin-top: 6px;
   border-radius: 10px;
   color: var(--text-muted);
   font-size: 13px;
@@ -822,4 +953,40 @@
 .notice p {
   color: var(--text-muted);
   max-width: 46ch;
+}
+
+/* Niedrige Schirme (kleiner als das 10"-Terminal): der Kassier-Dialog wird
+   gestrafft, statt einen Rollbalken zu bekommen - beim Kassieren muss alles
+   auf einen Blick da sein. */
+@media (max-height: 560px) {
+  .payCard {
+    padding: 12px 18px 12px;
+  }
+  .payBig {
+    font-size: 30px;
+    margin: 6px 0 8px;
+  }
+  .quickBtn {
+    min-height: 50px;
+  }
+  .changeBox {
+    min-height: 54px;
+  }
+  .confirmBtn {
+    height: 54px;
+  }
+  .secondaryBtn {
+    min-height: 46px;
+    margin-top: 6px;
+  }
+  .backBtn {
+    height: 36px;
+    margin-top: 4px;
+  }
+  .qtyCard {
+    padding: 14px 18px 14px;
+  }
+  .pfandRows {
+    max-height: 38vh;
+  }
 }

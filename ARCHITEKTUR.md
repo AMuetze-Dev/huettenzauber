@@ -438,6 +438,59 @@ Nach der ersten Bedienung am fertigen Produkt. Alle Punkte sind umgesetzt.
 - **D30 – Kein festes Spaltenraster.** Kachelwand `auto-fill`, Fußleiste und
   Kopfzeile schrumpfen statt zu überlaufen. Eine Querleiste kostet am Tresen
   Zeit.
+- **D31 – Kein eigener Proxy-Container mehr** (nachträglich dokumentiert; die
+  Änderung fiel beim v2-Umbau an, ohne hier vermerkt zu werden).
+  Bis dahin: Service `proxy` (`nginx:alpine`, Port 80, `./nginx.conf`), der
+  `/api/` an `backend:8000` und alles andere an `frontend:80` weiterreichte.
+  Die Aufgabe liegt jetzt an zwei Stellen:
+  - **Prod:** `frontend/nginx.conf` im Frontend-Container – Port 80, SPA aus
+    `/usr/share/nginx/html`, `/api/` an `backend:8000`, dazu
+    `proxy_buffering off` und `proxy_read_timeout 1h` für den SSE-Strom.
+    Einstieg bleibt `http://<pi>/`.
+  - **Dev:** der Proxy des Vite-Dev-Servers (`server.proxy["/api"]`).
+
+  Zusätzlich hätte die alte `nginx.conf` mit v2 nicht mehr funktioniert:
+  `proxy_pass http://…:8000/` (mit Schrägstrich) schnitt das `/api`-Präfix ab,
+  und sie zeigte auf `frontend:80` – im Dev-Stack läuft Vite auf 3000.
+  **Preis:** kein gemeinsamer Einstiegspunkt auf Port 80 im Dev-Stack (dort
+  `:3000` fürs Frontend, `:8000` fürs Backend) und keine Stelle für
+  TLS-Terminierung. Beides wird derzeit nicht gebraucht; wenn doch, kommt der
+  Container mit ~15 Zeilen zurück.
+
+  **Zweites Gerät (Handy im Hotspot):** unkritisch, weil das Frontend
+  ausschließlich relative Pfade benutzt (`BASE = "/api"`, `EventSource
+  ("/api/active-order/stream")`) – wer die Seite ausliefert, beantwortet auch
+  die API. Auf dem Pi ist das `http://<pi>/`, Port 80; das Backend hat in
+  `docker-compose.prod.yml` gar kein `ports:` und ist von außen nicht
+  erreichbar. Nachgemessen am gebauten Prod-Image: SPA, SPA-Fallback,
+  `GET/POST /api` und der live gepushte SSE-Strom laufen alle über Port 80.
+  Im Dev-Stack wies Vite fremde Host-**Namen** mit 403 ab (IP-Adressen gingen
+  durch) – deshalb `server.allowedHosts: true` in `vite.config.ts`.
+
+- **D32 – Rückgeld über die Stückelung, nicht über feste Scheine.** Vorher
+  gab es 5/10/20/50 als Auswahl; bei 40,30 € war davon nur der 50er
+  anklickbar. Jetzt: „passend", zwei zum Betrag berechnete Vorschläge
+  (`changeSuggestions`: nächste Fünferstufe, nächster Schein, Zehnerstufe,
+  fünf Euro mehr – gedeckelt auf rund 20 € Rückgeld, damit für 52,80 € kein
+  100er vorgeschlagen wird), eine Zeile Stückelung zum Aufaddieren und die
+  freie Eingabe. 45 € oder 42 € sind damit drei Tipps.
+  **Darstellung:** Scheine (50/20/10/5) eckig und warm hinterlegt, Münzen
+  (2/1/0,50) rund – das trennt die Gruppen ohne eine zweite Zeile, für die
+  auf 600 px Höhe kein Platz ist. Beschriftung über `euroShort()`: glatte
+  Beträge als „20 €", Münzen als „50 ct"; Summen und Rückgeld bleiben bei
+  `euro()`, dort zählt jeder Cent.
+  **Höhe:** Der Dialog muss ohne Rollbalken auf das 10"-Terminal passen –
+  beim Kassieren steht der Gast davor. Deshalb ist bei offener Zehnertastatur
+  alles darunter ausgeblendet (erst übernehmen, dann abschließen), und unter
+  560 px Höhe greift eine Media-Query, die Schriftgrößen und Knopfhöhen
+  strafft.
+- **D33 – Trinkgeld ist eine Bargeldbewegung, kein Umsatz.** Bleibt beim
+  Kassieren etwas übrig und der Gast sagt „stimmt so", bucht der Knopf
+  „Stimmt so · X Trinkgeld" die Differenz als `cash_movement` mit dem Grund
+  „Trinkgeld" (siehe D25). Der Bon bleibt unverändert – das Geld liegt aber in
+  der Kasse und muss im Soll-Bestand stehen, sonst zeigt der Kassenschnitt
+  abends einen unerklärten Überschuss. Scheitert nur die Trinkgeld-Buchung,
+  bleibt der Bon stehen und der Bediener wird ausdrücklich darauf hingewiesen.
 
 ---
 
