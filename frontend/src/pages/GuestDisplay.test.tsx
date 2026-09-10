@@ -10,6 +10,24 @@ class FakeEventSource {
   close() {}
 }
 
+function order(lines: [number, number][], over: Record<string, unknown> = {}) {
+  return {
+    event_id: 1,
+    updated_at: "2026-01-01T00:00:00Z",
+    revision: 1,
+    lines: lines.map(([id, qty]) => ({
+      item_variant_id: id,
+      quantity: qty.toFixed(3),
+    })),
+    deposit_returns: [],
+    total_gross: "0.00",
+    total_deposit: "0.00",
+    deposit_return_total: "0.00",
+    total_due: "0.00",
+    ...over,
+  };
+}
+
 describe("GuestDisplay", () => {
   beforeEach(() => {
     vi.stubGlobal("EventSource", FakeEventSource as unknown as typeof EventSource);
@@ -87,7 +105,7 @@ describe("GuestDisplay", () => {
     expect(screen.getByText("Pfandrückgabe")).toBeInTheDocument();
   });
 
-  it("bei > 7 Positionen erscheint '+ n weitere'", () => {
+  it("mehr Positionen als Platz: der Rest wird zusammengefasst", () => {
     let es: FakeEventSource | null = null;
     vi.stubGlobal(
       "EventSource",
@@ -118,7 +136,9 @@ describe("GuestDisplay", () => {
         }),
       } as MessageEvent);
     });
-    expect(screen.getByText("+ 3 weitere Positionen")).toBeInTheDocument();
+    // Ohne ResizeObserver (jsdom) greift die Startannahme von sieben Zeilen;
+    // der Hinweis kostet selbst eine, also bleiben sechs sichtbar.
+    expect(screen.getByText(/\+ 4 weitere Positionen/)).toBeInTheDocument();
   });
 
   it("unbekannte Varianten-ID fällt auf 'Artikel N' zurück", () => {
@@ -167,5 +187,65 @@ describe("GuestDisplay", () => {
       es!.onmessage!({ data: ": keepalive" } as MessageEvent);
     });
     expect(screen.getByText("Willkommen")).toBeInTheDocument();
+  });
+
+  describe("frisch gebuchte Position", () => {
+    function mitStream() {
+      let es: FakeEventSource | null = null;
+      vi.stubGlobal(
+        "EventSource",
+        class extends FakeEventSource {
+          constructor(url: string) {
+            super(url);
+            es = this;
+          }
+        } as unknown as typeof EventSource,
+      );
+      render(<GuestDisplay />);
+      return {
+        push: (o: unknown) =>
+          act(() => {
+            es!.onmessage!({ data: JSON.stringify(o) } as MessageEvent);
+          }),
+      };
+    }
+
+    const zeileVon = (text: string) =>
+      screen.getByText(text).closest("div")!;
+
+    it("der erste Aufbau hebt nichts hervor", () => {
+      const { push } = mitStream();
+      push(order([[5, 1]]));
+      expect(zeileVon("1×").className).not.toMatch(/fresh/);
+    });
+
+    it("eine erhöhte Menge wird kurz hinterlegt", () => {
+      const { push } = mitStream();
+      push(order([[5, 1]]));
+      push(order([[5, 2]], { revision: 2 }));
+      expect(zeileVon("2×").className).toMatch(/fresh/);
+    });
+
+    it("unveränderte Positionen bleiben ruhig", () => {
+      const { push } = mitStream();
+      push(order([[5, 1], [6, 1]]));
+      push(order([[5, 1], [6, 3]], { revision: 2 }));
+      expect(zeileVon("3×").className).toMatch(/fresh/);
+      expect(zeileVon("1×").className).not.toMatch(/fresh/);
+    });
+
+    it("die Hervorhebung verschwindet von selbst", () => {
+      vi.useFakeTimers();
+      try {
+        const { push } = mitStream();
+        push(order([[5, 1]]));
+        push(order([[5, 2]], { revision: 2 }));
+        expect(zeileVon("2×").className).toMatch(/fresh/);
+        act(() => void vi.advanceTimersByTime(1500));
+        expect(zeileVon("2×").className).not.toMatch(/fresh/);
+      } finally {
+        vi.useRealTimers();
+      }
+    });
   });
 });

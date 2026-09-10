@@ -138,6 +138,11 @@ export interface DepositReturnRow {
   total_amount: string;
 }
 
+/** Was an einem Betriebstag über die Theke ging.
+ *
+ * Bewusst ohne Kassenbestand, Wechselgeld und Bargeldbewegungen: die waren im
+ * Betrieb nie zuverlässig erfasst (siehe D41 in ARCHITEKTUR.md).
+ */
 export interface CashCount {
   event_id: number;
   event_name: string;
@@ -147,25 +152,18 @@ export interface CashCount {
   total_deposit: string;
   deposit_return_in_bills: string;
   standalone_deposit_return: string;
+  /** Bons abzüglich einzeln ausgezahltem Pfand. */
   cash_income: string;
-  opening_float: string;
-  /** Summe der Ein-/Auszahlungen des Tages, vorzeichenbehaftet. */
-  movement_total: string;
-  expected_cash: string;
-  counted_cash: string | null;
-  difference: string | null;
   closed: boolean;
   closed_at: string | null;
 }
 
-/** Bargeld rein/raus außerhalb des Verkaufs. Positiv = Einlage. */
-export interface CashMovement {
-  id: number;
+export interface DayClose {
   event_id: number;
   business_day: string;
-  created_at: string;
-  amount: string;
-  reason: string;
+  closed_at: string;
+  total_gross: string;
+  total_deposit: string;
 }
 
 export interface Health {

@@ -223,64 +223,75 @@ def test_deposit_returns_standalone_filter(client, active_event):
     assert len(only) == 1 and only[0]["bill_id"] is None
 
 
-# --- Kassenschnitt --------------------------------------------
+# --- Tagesabschluss -------------------------------------------
 def test_cash_count_empty_day(client, active_event):
     r = client.get("/api/cash-count")
     assert r.status_code == 200
     b = r.json()
     assert b["bill_count"] == 0
-    assert D(b["opening_float"]) == D(0)
-    assert D(b["expected_cash"]) == D(0)
-    assert b["counted_cash"] is None
-    assert b["difference"] is None
+    assert D(b["total_gross"]) == D(0)
+    assert D(b["cash_income"]) == D(0)
     assert b["closed"] is False
 
 
-def test_cash_float_is_stored_and_used(client, active_event):
-    r = client.put("/api/cash-float", json={"amount": "200.00"})
-    assert r.status_code == 200
-    assert D(r.json()["opening_float"]) == D("200.00")
-    assert D(r.json()["expected_cash"]) == D("200.00")
+def test_cash_count_kennt_keinen_bestand(client, active_event):
+    """Gezaehlter Bestand, Wechselgeld und Bewegungen sind bewusst weg -
+    im Betrieb waren sie nie zuverlaessig erfasst (D41)."""
+    b = client.get("/api/cash-count").json()
+    for weg in ("opening_float", "counted_cash", "difference",
+                "expected_cash", "movement_total"):
+        assert weg not in b, f"{weg} sollte nicht mehr geliefert werden"
+
+
+def test_alte_kassenbestand_endpunkte_sind_fort(client, active_event):
+    assert client.put("/api/cash-float", json={"amount": "10"}).status_code == 404
+    assert client.get("/api/cash-movements").status_code == 404
+    assert client.post("/api/cash-movements", json={"amount": "5"}).status_code == 404
 
 
 def test_cash_count_full_flow(client, active_event):
     _e, vid = active_event  # 4,60 ohne Pfand
-    client.put("/api/cash-float", json={"amount": "100.00"})
-
     client.post("/api/active-order/lines", json={"variant_id": vid, "delta": "5"})
     client.post("/api/bills")  # 23,00 rein
-    client.post("/api/deposit-returns", json={"unit_amount": "2.00", "quantity": 4})  # 8,00 raus
+    client.post("/api/deposit-returns", json={"unit_amount": "2.00", "quantity": 4})
 
     b = client.get("/api/cash-count").json()
     assert b["bill_count"] == 1
     assert D(b["total_gross"]) == D("23.00")
     assert D(b["standalone_deposit_return"]) == D("8.00")
     assert D(b["cash_income"]) == D("15.00")  # 23 - 8
-    assert D(b["expected_cash"]) == D("115.00")  # + Startgeld
 
 
-def test_day_close_with_counted_cash_and_difference(client, active_event):
+def test_day_close_ohne_zaehlung(client, active_event):
     _e, vid = active_event
-    client.put("/api/cash-float", json={"amount": "50.00"})
     client.post("/api/active-order/lines", json={"variant_id": vid, "delta": "1"})
     client.post("/api/bills")  # 4,60
 
-    r = client.post("/api/day-close", json={"counted_cash": "54.10"})
+    r = client.post("/api/day-close")
     assert r.status_code == 200
-    assert D(r.json()["opening_float"]) == D("50.00")
-    assert D(r.json()["counted_cash"]) == D("54.10")
+    assert D(r.json()["total_gross"]) == D("4.60")
+    assert "counted_cash" not in r.json()
 
     cc = client.get("/api/cash-count").json()
-    assert D(cc["expected_cash"]) == D("54.60")
-    assert D(cc["difference"]) == D("-0.50")
     assert cc["closed"] is True
+    assert cc["closed_at"] is not None
 
 
-def test_day_close_without_counted_cash_leaves_difference_none(client, active_event):
-    client.post("/api/day-close", json={})
-    cc = client.get("/api/cash-count").json()
-    assert cc["closed"] is True
-    assert cc["counted_cash"] is None and cc["difference"] is None
+def test_day_close_nimmt_keinen_zaehlbetrag_mehr_an(client, active_event):
+    """Ein alter Client wuerde `counted_cash` schicken - das wird ignoriert,
+    nicht mit einem Fehler quittiert."""
+    r = client.post("/api/day-close", json={"counted_cash": "99.99"})
+    assert r.status_code == 200
+    assert "counted_cash" not in r.json()
+
+
+def test_day_close_zweimal_aktualisiert_nur(client, active_event):
+    _e, vid = active_event
+    client.post("/api/day-close")
+    client.post("/api/active-order/lines", json={"variant_id": vid, "delta": "2"})
+    client.post("/api/bills")
+    r = client.post("/api/day-close")
+    assert D(r.json()["total_gross"]) == D("9.20")
 
 
 def test_voided_bill_removed_from_cash_count(client, active_event):

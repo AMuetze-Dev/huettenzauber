@@ -9,6 +9,18 @@ ENV UV_PROJECT_ENVIRONMENT=/opt/venv \
     WATCHFILES_FORCE_POLLING=true
 
 # psycopg2-binary bringt libpq statisch mit -> keine Build-Tools noetig.
+#
+# pg_dump wird gebraucht: ohne ihn schreibt der Tagesabschluss stillschweigend
+# keine Sicherung. Seine Version muss >= der des Servers sein (aktuell 17) -
+# ein aelterer pg_dump verweigert den Dump. Debian 13 liefert 17 direkt mit.
+# Der Test laesst den Build scheitern, falls das Basisimage einmal etwas
+# Aelteres mitbringt, statt ein Image mit totem Backup auszuliefern.
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends postgresql-client \
+ && rm -rf /var/lib/apt/lists/* \
+ && pg_dump --version \
+ && test "$(pg_dump --version | awk '{print $3}' | cut -d. -f1)" -ge 17
+
 RUN pip install --no-cache-dir uv
 
 WORKDIR /app

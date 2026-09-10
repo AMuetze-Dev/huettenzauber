@@ -1,6 +1,6 @@
 from datetime import date
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Response, status
 from sqlalchemy.orm import Session
 
 from database import get_db
@@ -9,10 +9,6 @@ from schemas import (
     BillListItem,
     BillOut,
     CashCountOut,
-    CashFloatIn,
-    CashMovementIn,
-    CashMovementOut,
-    DayCloseIn,
     DayCloseOut,
     DaySummaryOut,
     DepositReturnIn2,
@@ -20,7 +16,7 @@ from schemas import (
     StatisticsOut,
 )
 
-from . import service
+from . import pdf, service
 
 router = APIRouter(prefix="/api", tags=["billing"])
 
@@ -40,6 +36,30 @@ def list_bills(
 ):
     event = require_active_event(db)
     return service.list_bills(db, event.id, day=day, include_deleted=include_deleted)
+
+
+# --- Ausdruck --------------------------------------------------
+@router.get(
+    "/bills/export.pdf",
+    response_class=Response,
+    responses={200: {"content": {"application/pdf": {}}}},
+)
+def export_bills_pdf(day: date | None = None, db: Session = Depends(get_db)):
+    """Rechnungsuebersicht eines Betriebstags als PDF."""
+    event = require_active_event(db)
+    kasse = service.cash_count(db, event.id, day)
+    bons = service.list_bills(db, event.id, day=day, include_deleted=True)
+    stat = service.statistics(db, event.id, kasse.business_day)
+    inhalt = pdf.build_overview(kasse=kasse, bons=bons, verbrauch=stat.consumption)
+    return Response(
+        content=inhalt,
+        media_type="application/pdf",
+        headers={
+            # `inline` statt `attachment`: am Handy oeffnet sich die Vorschau,
+            # gespeichert wird von dort mit einem Tipp.
+            "Content-Disposition": f'inline; filename="{pdf.dateiname(kasse)}"',
+        },
+    )
 
 
 @router.get("/bills/{bill_id}", response_model=BillOut)
@@ -102,49 +122,10 @@ def cash_count(day: date | None = None, db: Session = Depends(get_db)):
     return service.cash_count(db, event.id, day)
 
 
-@router.put("/cash-float", response_model=CashCountOut)
-def set_cash_float(
-    payload: CashFloatIn, day: date | None = None, db: Session = Depends(get_db)
-):
-    event = require_active_event(db)
-    service.set_cash_float(db, event.id, payload.amount, day)
-    return service.cash_count(db, event.id, day)
-
-
-@router.get("/cash-movements", response_model=list[CashMovementOut])
-def list_cash_movements(day: date | None = None, db: Session = Depends(get_db)):
-    event = require_active_event(db)
-    return service.list_cash_movements(db, event.id, day)
-
-
-@router.post(
-    "/cash-movements",
-    response_model=CashMovementOut,
-    status_code=status.HTTP_201_CREATED,
-)
-def add_cash_movement(
-    payload: CashMovementIn, day: date | None = None, db: Session = Depends(get_db)
-):
-    event = require_active_event(db)
-    return service.add_cash_movement(
-        db, event.id, payload.amount, payload.reason, day
-    )
-
-
-@router.delete("/cash-movements/{movement_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_cash_movement(movement_id: int, db: Session = Depends(get_db)):
-    service.delete_cash_movement(db, movement_id)
-
-
 @router.post("/day-close", response_model=DayCloseOut)
-def close_day(
-    payload: DayCloseIn | None = None,
-    day: date | None = None,
-    db: Session = Depends(get_db),
-):
+def close_day(day: date | None = None, db: Session = Depends(get_db)):
     event = require_active_event(db)
-    counted = payload.counted_cash if payload else None
-    return service.close_day(db, event.id, day, counted)
+    return service.close_day(db, event.id, day)
 
 
 @router.get("/day-close", response_model=DayCloseOut)

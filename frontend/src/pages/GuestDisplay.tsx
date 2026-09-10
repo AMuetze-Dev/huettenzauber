@@ -3,6 +3,7 @@ import { api } from "../api/client";
 import type { StockItem } from "../api/types";
 import { euro, toNumber } from "../lib/money";
 import { useActiveOrderStream } from "../order/useActiveOrderStream";
+import { fitRows, FALLBACK_LINE_HEIGHT } from "./guestRows";
 import styles from "./GuestDisplay.module.css";
 
 interface VariantInfo {
@@ -11,7 +12,8 @@ interface VariantInfo {
   price: number;
 }
 
-const VISIBLE = 7;
+/** Startwert, bis der ResizeObserver die echte Höhe gemeldet hat. */
+const FALLBACK_HEIGHT = 7 * FALLBACK_LINE_HEIGHT;
 
 /** Ruhebild: laeuft stundenlang auf dem 7"-Display, darf also nicht flimmern
  *  und keine feste Grafik einbrennen - deshalb nur die wandernde Uhrzeit. */
@@ -74,6 +76,52 @@ export default function GuestDisplay() {
 
   const isEmpty = !order || rows.length === 0;
 
+  // Was sich gerade geändert hat, wird kurz hinterlegt - der Gast soll sehen,
+  // was eben gebucht wurde, ohne die ganze Liste absuchen zu müssen.
+  const [fresh, setFresh] = useState<ReadonlySet<number>>(new Set());
+  const letzteMengen = useRef(new Map<number, number>());
+  useEffect(() => {
+    const vorher = letzteMengen.current;
+    const neu = new Set<number>();
+    for (const r of rows) if ((vorher.get(r.id) ?? 0) !== r.qty) neu.add(r.id);
+    letzteMengen.current = new Map(rows.map((r) => [r.id, r.qty]));
+    // Beim ersten Aufbau ist alles "neu" - das waere nur Unruhe.
+    if (vorher.size === 0 || neu.size === 0) return;
+    setFresh(neu);
+    const t = window.setTimeout(() => setFresh(new Set()), 1400);
+    return () => window.clearTimeout(t);
+  }, [rows]);
+
+  // So viele Zeilen zeigen, wie wirklich hinpassen - erst dann kürzen.
+  const linesRef = useRef<HTMLDivElement>(null);
+  const [lineSpace, setLineSpace] = useState(FALLBACK_HEIGHT);
+  const [lineHeight, setLineHeight] = useState(FALLBACK_LINE_HEIGHT);
+  useEffect(() => {
+    const el = linesRef.current;
+    if (!el || typeof ResizeObserver === "undefined") return;
+    const messen = () => {
+      const cs = getComputedStyle(el);
+      // clientHeight schliesst das Innenabstandspolster ein - ohne Abzug
+      // ragte die letzte Zeile knapp ueber den Rand.
+      const polster =
+        parseFloat(cs.paddingTop || "0") + parseFloat(cs.paddingBottom || "0");
+      setLineSpace(el.clientHeight - polster);
+      // Zeilenhoehe steht in der CSS (--guest-line); von dort lesen, damit
+      // eine Aenderung am Stylesheet nicht still die Rechnung verstellt.
+      const hoehe = parseFloat(cs.getPropertyValue("--guest-line"));
+      if (Number.isFinite(hoehe) && hoehe > 0) setLineHeight(hoehe);
+    };
+    messen();
+    const ro = new ResizeObserver(messen);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [isEmpty]);
+
+  const fit = useMemo(
+    () => fitRows(rows, lineSpace, lineHeight),
+    [rows, lineSpace, lineHeight],
+  );
+
   return (
     <div className={`${styles.screen} no-select`}>
       <div className={styles.header}>
@@ -86,17 +134,21 @@ export default function GuestDisplay() {
         <Idle />
       ) : (
         <div className={styles.body}>
-          <div className={styles.lines}>
-            {rows.slice(-VISIBLE).map((r) => (
-              <div key={r.id} className={styles.line}>
+          <div className={styles.lines} ref={linesRef}>
+            {fit.shown.map((r) => (
+              <div
+                key={r.id}
+                className={`${styles.line} ${fresh.has(r.id) ? styles.fresh : ""}`}
+              >
                 <span className={`${styles.q} tnum`}>{r.qty}×</span>
                 <span className={styles.name}>{r.name}</span>
                 <span className={`${styles.sum} tnum`}>{euro(r.sum)}</span>
               </div>
             ))}
-            {rows.length > VISIBLE && (
+            {fit.hidden > 0 && (
               <span className={styles.more}>
-                + {rows.length - VISIBLE} weitere Positionen
+                + {fit.hidden} weitere{" "}
+                {fit.hidden === 1 ? "Position" : "Positionen"}
               </span>
             )}
           </div>

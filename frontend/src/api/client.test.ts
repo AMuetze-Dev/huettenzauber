@@ -131,10 +131,18 @@ describe("api client", () => {
     await expect(api.activeEvent()).rejects.toBeInstanceOf(ApiError);
   });
 
-  it("Tagesabschluss schickt den Zählbetrag als null, wenn keiner erfasst wurde", async () => {
+  it("Tagesabschluss schickt keinen Zählbetrag mehr mit (D41)", async () => {
     (fetch as never as ReturnType<typeof vi.fn>).mockResolvedValue(ok({}));
-    await api.closeDay(null);
-    expect(JSON.parse(lastCall()[1].body as string)).toEqual({ counted_cash: null });
+    await api.closeDay();
+    expect(lastCall()[0]).toBe("/api/day-close");
+    expect(lastCall()[1].method).toBe("POST");
+    expect(lastCall()[1].body).toBeUndefined();
+  });
+
+  it("Tagesabschluss kann einen anderen Tag adressieren", async () => {
+    (fetch as never as ReturnType<typeof vi.fn>).mockResolvedValue(ok({}));
+    await api.closeDay("2026-09-07");
+    expect(lastCall()[0]).toBe("/api/day-close?day=2026-09-07");
   });
 
   it("Bon-Liste hängt Filter als Query an", async () => {

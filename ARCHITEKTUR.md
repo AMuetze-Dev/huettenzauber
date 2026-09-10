@@ -492,6 +492,80 @@ Nach der ersten Bedienung am fertigen Produkt. Alle Punkte sind umgesetzt.
   abends einen unerklärten Überschuss. Scheitert nur die Trinkgeld-Buchung,
   bleibt der Bon stehen und der Bediener wird ausdrücklich darauf hingewiesen.
 
+- **D34 – Der Warenkorb wächst bis nach oben.** Vorher `max-height: 60vh` –
+  auf dem 10"-Terminal kam damit schon bei zehn Positionen ein Rollbalken,
+  obwohl der halbe Bildschirm leer war. Jetzt `calc(100% - 12px)`.
+- **D35 – „Leeren" fragt nach.** Ein Fehlgriff kostete bis dahin die ganze
+  aufgenommene Bestellung; die Rückfrage nennt Anzahl und Betrag.
+- **D36 – Das Kundendisplay misst seinen Platz, statt sieben Zeilen zu raten.**
+  `fitRows()` rechnet aus der gemessenen Höhe (ResizeObserver, Innenabstand
+  abgezogen), wie viele Positionen hinpassen, und kürzt erst dann – wobei der
+  Hinweis „+ n weitere Positionen" selbst als Zeile mitzählt. Ohne
+  ResizeObserver (Test, alter Browser) bleibt es bei sieben Zeilen.
+  Die Zeilenhöhe steht als `--guest-line` **nur** in der CSS und wird von der
+  Komponente ausgelesen – ein zweiter Wert im TypeScript wäre schon beim
+  nächsten Stil-Umbau still falsch geworden.
+- **D38 – Positionszeilen mittig statt an der Grundlinie.** Mit
+  `align-items: baseline` bei fester Zeilenhöhe saß der Text oben, die
+  Trennlinie 48 px darunter – sie klebte optisch an der folgenden Zeile statt
+  zwischen beiden zu stehen. Dazu: Menge als runde Marke, Schrift auf 17,5 px
+  (Leseabstand am Tresen), keine Linie unter der letzten Zeile.
+- **D39 – Gerade gebuchte Position wird 1,4 s hinterlegt.** Das Display zeigt
+  sonst nur eine Liste, in der sich irgendwo eine Zahl geändert hat. Kein
+  Blinken und keine Bewegung – das Gerät läuft stundenlang.
+- **D37 – Pfandhinweis auch auf Karten mit mehreren Größen.** Stand vorher nur
+  auf Einzelkacheln; bei „Federweißer 0,25 l / 0,1 l" fehlte er, obwohl 2 €
+  Pfand anfallen.
+
+- **D40 – Klickfläche = Sichtfläche auf der Artikelkachel.** Die Kachel ist im
+  Raster auf Zeilenhöhe gestreckt, der Knopf darin war nur inhaltshoch: klappte
+  ein Artikel seine Größen auf, wuchsen die Nachbarkacheln mit, und ihr unterer
+  Teil sah aus wie Kachel, reagierte aber nicht. Jetzt füllt `.cardBtn` die
+  Kachel (`flex: 1`) und trägt das Polster, das vorher an der Kachel hing.
+  Das Mengen-Abzeichen hängt dadurch am Kachelrand statt am Knopf – im
+  Schnellzugriff und auf den Größen-Chips bleibt es wie gehabt überhängend.
+  Gemessen: bei aufgeklappten Größen 170 px Knopf in einer 172-px-Kachel,
+  vorher 92. jsdom rechnet kein Layout, deshalb hält
+  `OrderTerminal.layout.test.ts` die CSS-Regeln selbst fest.
+
+- **D41 – Kein Kassenbestand, kein Soll-Ist-Vergleich.** Wechselgeld-Startbestand,
+  Zwischenablagen im Tresor, gebuchtes Trinkgeld und gezählter Endbestand sind
+  wieder ausgebaut (Tabellen `cash_float` und `cash_movement`, Spalten
+  `day_close.opening_float` / `counted_cash`, Migration `0006_no_cash_stock`).
+  Grund ist keine technische Hürde, sondern der Betrieb: an einem
+  Federweißerfest wandert Bargeld an der Theke schneller als jemand es tippt.
+  Ein Trinkgeld geht in die Dose, ein Bündel Fünfziger in den Tresor, Kleingeld
+  kommt aus der Nachbarhütte – wird davon eine Bewegung nicht erfasst, zeigt der
+  Kassenschnitt eine Differenz, die nichts über den Abend aussagt. Ein
+  scheingenauer Sollwert ist schlechter als gar keiner, weil er nach Prüfung
+  aussieht. Geblieben ist deshalb nur, was der Rechner selbst weiß: was über die
+  Theke ging (Bons, Pfand, Pfandrückgaben) und der Vermerk „Tag abgerechnet"
+  samt `pg_dump`. Das Zählen der Lade bleibt Papier und Bauchgefühl des Wirts –
+  ein Kassenbuch wollte hier niemand.
+  *Preis:* aus dem System heraus fällt kein Kassenfehlbetrag mehr auf. Umkehrbar
+  ist die Entscheidung trotzdem: `0006` hat ein vollständiges `downgrade()`.
+- **D42 – Rechnungsübersicht als PDF, in denselben Brauntönen.** Der Tag lässt
+  sich unter `GET /api/bills/export.pdf` als Ausdruck ziehen: Kopf mit
+  Veranstaltung und ausgeschriebenem Datum, vier Summenkacheln (Bons,
+  Warenwert, Pfand, Bareinnahme), die Bonliste inklusive stornierter Bons und
+  darunter „Was über die Theke ging" – welcher Artikel wie oft verkauft wurde.
+  Gebaut mit **fpdf2**; die Farben stammen aus denselben Werten wie
+  `frontend/src/styles/tokens.css`, der Untergrund bleibt dunkel. Ein weißes
+  Blatt wäre billiger zu drucken, hätte aber ausgesehen wie aus einem anderen
+  Programm.
+  Zwei Dinge, die dabei Arbeit gemacht haben:
+  - Die Route steht **vor** `/bills/{bill_id}`, sonst versucht FastAPI
+    „export.pdf" als Zahl zu lesen und antwortet 422.
+  - `Content-Disposition` trägt nur ASCII. `"Ü".isalnum()` ist in Python `True`,
+    der Dateiname „Fest mit Ümlaut" hat die Antwort deshalb beim Kodieren der
+    Kopfzeile zerlegt – jetzt werden Umlaute vorher umgeschrieben
+    (`Fest-mit-Uemlaut.pdf`). Im PDF selbst stehen sie weiter richtig, die
+    Inter-Schnitte liegen als TTF unter `backend/assets/fonts/`.
+  Ausgeliefert wird `inline` statt `attachment`: am Handy öffnet sich die
+  Vorschau, gespeichert wird von dort mit einem Tipp. Geprüft wird der fertige
+  Ausdruck – `test/test_pdf_export.py` liest das PDF mit pypdf zurück und sucht
+  Zahlen, Artikelnamen und Storno-Vermerke darin.
+
 ---
 
 ## Quellen

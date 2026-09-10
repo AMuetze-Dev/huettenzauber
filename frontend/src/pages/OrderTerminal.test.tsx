@@ -156,7 +156,6 @@ describe("OrderTerminal", () => {
     vi.spyOn(api, "clearDepositReturns").mockResolvedValue(order(2));
     vi.spyOn(api, "createDepositReturn");
     vi.spyOn(api, "createBill");
-    vi.spyOn(api, "addCashMovement");
   });
   afterEach(() => {
     vi.restoreAllMocks();
@@ -600,55 +599,29 @@ describe("OrderTerminal", () => {
       items: [],
     });
 
-  // --- Trinkgeld -------------------------------------------------
-  it("ohne Rest gibt es keinen Trinkgeld-Knopf", async () => {
+  // --- Kein Trinkgeld mehr im Rechner (D41) ----------------------
+  it("bleibt ein Rest, wird trotzdem nur der Bon gebucht", async () => {
+    bonMock();
     await openPay();
-    fireEvent.click(within(payDialog()).getByText("passend").closest("button")!);
+    legeHin("10 €"); // 8,00 fällig -> 2,00 Rest
+    fireEvent.click(screen.getByRole("button", { name: /Abschließen · 2,00.*zurück/ }));
+    await waitFor(() => expect(api.createBill).toHaveBeenCalledTimes(1));
+    expect(await screen.findByText(/Bon #42/)).toBeInTheDocument();
+  });
+
+  it("es gibt keinen Trinkgeld-Knopf mehr", async () => {
+    await openPay();
+    legeHin("10 €");
+    expect(screen.queryByRole("button", { name: /Stimmt so/ })).toBeNull();
     expect(screen.queryByRole("button", { name: /Trinkgeld/ })).toBeNull();
   });
 
-  it("bleibt etwas übrig, lässt sich „stimmt so“ buchen", async () => {
-    bonMock();
-    vi.mocked(api.addCashMovement).mockResolvedValue({
-      id: 1,
-      event_id: 1,
-      business_day: "2026-09-07",
-      created_at: "2026-09-07T12:00:00Z",
-      amount: "2.00",
-      reason: "Trinkgeld",
-    });
-    await openPay();
-    legeHin("10 €"); // 8,00 fällig -> 2,00 Rest
-    fireEvent.click(screen.getByRole("button", { name: /Stimmt so · 2,00.*Trinkgeld/ }));
-    await waitFor(() => expect(api.createBill).toHaveBeenCalled());
-    expect(api.addCashMovement).toHaveBeenCalledWith("2.00", "Trinkgeld");
-  });
-
-  it("normales Abschließen bucht kein Trinkgeld", async () => {
-    bonMock();
+  it("der Rest steht als Rückgeld da, damit er in der Hand landet", async () => {
     await openPay();
     legeHin("10 €");
-    fireEvent.click(screen.getByRole("button", { name: /Abschließen · 2,00.*zurück/ }));
-    await waitFor(() => expect(api.createBill).toHaveBeenCalled());
-    expect(api.addCashMovement).not.toHaveBeenCalled();
-  });
-
-  it("scheitert nur die Trinkgeld-Buchung, steht der Bon trotzdem", async () => {
-    bonMock();
-    vi.mocked(api.addCashMovement).mockRejectedValue(new ApiError(0, "weg"));
-    await openPay();
-    legeHin("10 €");
-    fireEvent.click(screen.getByRole("button", { name: /Stimmt so/ }));
-    expect(await screen.findByText(/Bon #42/)).toBeInTheDocument();
-    expect(
-      await screen.findByText(/Trinkgeld 2,00.*nicht gebucht/),
-    ).toBeInTheDocument();
-  });
-
-  it("bei zu wenig Geld gibt es keinen Trinkgeld-Knopf", async () => {
-    await openPay();
-    legeHin("5 €");
-    expect(screen.queryByRole("button", { name: /Stimmt so/ })).toBeNull();
+    const box = payDialog();
+    expect(within(box).getByText("Rückgeld")).toBeInTheDocument();
+    expect(within(box).getByText("2,00 €")).toBeInTheDocument();
   });
 
   it("scheitert der Bon, bleibt der Korb stehen", async () => {
@@ -692,14 +665,41 @@ describe("OrderTerminal", () => {
     // alte Bestellung, und der naechste Bon nahm sie mit.
     await openCart();
     fireEvent.click(screen.getByRole("button", { name: /Leeren/ }));
+    fireEvent.click(await screen.findByRole("button", { name: "Ja, leeren" }));
     await waitFor(() => expect(api.clearOrder).toHaveBeenCalled());
     expect(cartBtn()).toHaveAccessibleName(/0 Artikel/);
+  });
+
+  it("„Leeren“ fragt vorher nach", async () => {
+    await openCart();
+    fireEvent.click(screen.getByRole("button", { name: /Leeren/ }));
+    expect(
+      await screen.findByRole("dialog", { name: "Bestellung verwerfen?" }),
+    ).toBeInTheDocument();
+    expect(api.clearOrder).not.toHaveBeenCalled();
+  });
+
+  it("Rückfrage abbrechen lässt den Warenkorb stehen", async () => {
+    await openCart();
+    fireEvent.click(screen.getByRole("button", { name: /Leeren/ }));
+    fireEvent.click(await screen.findByRole("button", { name: "Abbrechen" }));
+    expect(api.clearOrder).not.toHaveBeenCalled();
+    expect(cartBtn()).toHaveAccessibleName(/2 Artikel/);
+  });
+
+  it("die Rückfrage nennt Anzahl und Betrag", async () => {
+    await openCart();
+    fireEvent.click(screen.getByRole("button", { name: /Leeren/ }));
+    const dlg = await screen.findByRole("dialog", { name: "Bestellung verwerfen?" });
+    expect(dlg).toHaveTextContent(/2 Artikel/);
+    expect(dlg).toHaveTextContent(/8,00/);
   });
 
   it("scheitert das Leeren, wird gewarnt statt still zu tun", async () => {
     vi.mocked(api.clearOrder).mockRejectedValue(new ApiError(0, "weg"));
     await openCart();
     fireEvent.click(screen.getByRole("button", { name: /Leeren/ }));
+    fireEvent.click(await screen.findByRole("button", { name: "Ja, leeren" }));
     expect(
       await screen.findByText(/Bestellung eventuell noch offen/),
     ).toBeInTheDocument();
@@ -723,5 +723,28 @@ describe("OrderTerminal", () => {
     await waitFor(() =>
       expect(screen.getByRole("button", { name: /Bar kassieren – 8,00/ })).toBeInTheDocument(),
     );
+  });
+
+  // --- Pfandhinweis auf der Kachel ------------------------------
+  it("Einzelvariante mit Pfand zeigt den Aufschlag", async () => {
+    await mount();
+    fireEvent.click(screen.getByText("Kueche").closest("button")!);
+    await screen.findByRole("heading", { name: "Kueche" });
+    expect(screen.getByText(/\+ 2,00.*Pfand/)).toBeInTheDocument();
+  });
+
+  it("auch eine Karte mit mehreren Größen nennt das Pfand", async () => {
+    // Weizen hat zwei Größen und 1,50 € Pfand - stand vorher nirgends.
+    await mount();
+    expect(screen.getByText(/\+ 1,50.*Pfand/)).toBeInTheDocument();
+  });
+
+  it("ohne Pfand steht auch kein Hinweis", async () => {
+    await mount();
+    expect(screen.queryByText(/Pfand/)).not.toBeNull(); // Weizen hat welches
+    fireEvent.click(screen.getByText("Kueche").closest("button")!);
+    await screen.findByRole("heading", { name: "Kueche" });
+    // Helles (0 € Pfand) ist in "Bier"; hier steht nur die Bratwurst mit 2 €
+    expect(screen.getAllByText(/Pfand/)).toHaveLength(1);
   });
 });

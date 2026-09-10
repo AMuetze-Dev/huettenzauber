@@ -14,7 +14,9 @@ services:
     image: postgres:17-bookworm
     container_name: huettenzauber_db
     restart: unless-stopped
-    environment: *db-env
+    environment:
+      <<: *db-env
+      TZ: ${TZ:-Europe/Berlin}
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -31,6 +33,16 @@ services:
     environment:
       DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER:-root}:${POSTGRES_PASSWORD:-root}@db:5432/${POSTGRES_DB:-huettenzauber}
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost}
+      # Optionaler Zugangscode fuer schreibende Endpunkte (leer = aus).
+      ACCESS_CODE: ${ACCESS_CODE:-}
+      # Tagesabschluss legt hier einen pg_dump ab (30 Stueck werden behalten).
+      BACKUP_DIR: /backups
+      # Ohne TZ laufen Logs und Sicherungs-Dateinamen in UTC - beim Suchen
+      # einer Sicherung sucht man dann zwei Stunden daneben.
+      TZ: ${TZ:-Europe/Berlin}
+    volumes:
+      # Bind-Mount statt Volume, damit die Dumps per scp erreichbar sind.
+      - ${BACKUP_HOST_DIR:-./backups}:/backups
     depends_on:
       db:
         condition: service_healthy

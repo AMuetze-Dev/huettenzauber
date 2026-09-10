@@ -231,12 +231,6 @@ class DayCloseOut(BaseModel):
     closed_at: datetime
     total_gross: Decimal
     total_deposit: Decimal
-    opening_float: Decimal
-    counted_cash: Decimal | None
-
-
-class DayCloseIn(BaseModel):
-    counted_cash: Decimal | None = None
 
 
 # --- Pfandrückgabe (eigenständig) ------------------------------
@@ -257,30 +251,10 @@ class DepositReturnOut(BaseModel):
     total_amount: Decimal
 
 
-# --- Kassenschnitt -------------------------------------------
-class CashFloatIn(BaseModel):
-    amount: Decimal
-
-
-class CashMovementIn(BaseModel):
-    """Vorzeichenbehaftet: positiv = Einlage, negativ = Entnahme."""
-
-    amount: Decimal
-    reason: str = ""
-
-
-class CashMovementOut(BaseModel):
-    model_config = _orm
-    id: int
-    event_id: int
-    business_day: date
-    created_at: datetime
-    amount: Decimal
-    reason: str
-
-
+# --- Tagesabschluss ------------------------------------------
 class CashCountOut(BaseModel):
-    """Alles, was der Kassenschnitt braucht - eine Anfrage, ein Bild."""
+    """Was an diesem Betriebstag ueber die Theke ging - eine Anfrage,
+    ein Bild. Bewusst ohne Kassenbestand: siehe D41 in ARCHITEKTUR.md."""
 
     event_id: int
     event_name: str
@@ -290,13 +264,8 @@ class CashCountOut(BaseModel):
     total_deposit: Decimal
     deposit_return_in_bills: Decimal
     standalone_deposit_return: Decimal
+    # Was netto an Bargeld hereinkam (Bons abzueglich Pfandauszahlungen).
     cash_income: Decimal
-    opening_float: Decimal
-    # Summe aller Einlagen/Entnahmen des Tages (vorzeichenbehaftet).
-    movement_total: Decimal
-    expected_cash: Decimal
-    counted_cash: Decimal | None
-    difference: Decimal | None
     closed: bool
     closed_at: datetime | None
 

@@ -1,17 +1,17 @@
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import {
   ArrowsClockwise,
+  FilePdf,
   Lock,
-  Minus,
-  Plus,
   Trash,
 } from "@phosphor-icons/react";
 import { api, ApiError } from "../api/client";
-import type { CashCount, CashMovement, DepositReturnRow } from "../api/types";
+import type { CashCount, DepositReturnRow } from "../api/types";
 import { NumPad } from "../components/NumPad";
 import { useToast } from "../components/Toast";
 import { Button, Modal } from "../components/ui";
 import { useDialogs } from "../components/useDialogs";
+import { saveFile } from "../lib/download";
 import { euro, toNumber } from "../lib/money";
 import layout from "./AdminLayout.module.css";
 import s from "./CashDeskAdmin.module.css";
@@ -21,38 +21,36 @@ function hhmm(iso: string): string {
   return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
 }
 
-type Pad = null | "float" | "count" | "deposit" | "in" | "out";
-
 const QTY_CHOICES = ["1", "2", "3", "4", "5", "6", "10", "12"];
 
-/** Vorgaben statt Tippen - am Pi haengt keine Tastatur. */
-const REASONS_IN = ["Wechselgeld nachgelegt", "Kleingeld getauscht", "Einlage"];
-const REASONS_OUT = ["In den Tresor", "Auslage bezahlt", "Entnahme"];
-
+/**
+ * Tagesabschluss: was über die Theke ging, dazu der Abschluss und die
+ * Pfandauszahlung ohne Bon.
+ *
+ * Kein gezählter Kassenbestand, kein Wechselgeld, keine Bargeldbewegungen –
+ * die waren im Betrieb nie zuverlässig erfasst und haben nur eine
+ * scheingenaue Differenz erzeugt (D41 in ARCHITEKTUR.md).
+ */
 export default function CashDeskAdmin() {
   const toast = useToast();
   const { confirm, dialog } = useDialogs();
   const [count, setCount] = useState<CashCount | null>(null);
   const [returns, setReturns] = useState<DepositReturnRow[]>([]);
-  const [movements, setMovements] = useState<CashMovement[]>([]);
   const [loading, setLoading] = useState(true);
   const [noEvent, setNoEvent] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [pad, setPad] = useState<Pad>(null);
+  const [pad, setPad] = useState(false);
   const [padValue, setPadValue] = useState("");
   const [depQty, setDepQty] = useState("1");
-  const [reason, setReason] = useState("");
 
   const load = useCallback(async () => {
     try {
-      const [c, r, m] = await Promise.all([
+      const [c, r] = await Promise.all([
         api.cashCount(),
         api.depositReturns({ standaloneOnly: true }),
-        api.cashMovements(),
       ]);
       setCount(c);
       setReturns(r);
-      setMovements(m);
       setNoEvent(false);
     } catch (e) {
       if (e instanceof ApiError && e.status === 409) setNoEvent(true);
@@ -66,20 +64,13 @@ export default function CashDeskAdmin() {
     void load();
   }, [load]);
 
-  function openPad(kind: Exclude<Pad, null>, initial = "") {
-    setPadValue(initial);
-    setDepQty("1");
-    setReason("");
-    setPad(kind);
-  }
-
   async function run(fn: () => Promise<unknown>, ok: string) {
     setBusy(true);
     try {
       await fn();
       await load();
       toast.success(ok);
-      setPad(null);
+      setPad(false);
     } catch (e) {
       toast.error(e instanceof ApiError ? e.detail : "Fehler");
     } finally {
@@ -87,20 +78,38 @@ export default function CashDeskAdmin() {
     }
   }
 
-  async function closeWithoutCount() {
+  async function downloadPdf() {
+    setBusy(true);
+    try {
+      saveFile(await api.billsPdf());
+      toast.success("Übersicht gespeichert");
+    } catch (e) {
+      toast.error(
+        e instanceof ApiError && !e.isOffline
+          ? e.detail
+          : "Kasse nicht erreichbar – Ausdruck fehlgeschlagen.",
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function closeDay() {
     const ok = await confirm({
-      title: "Ohne Zählung abschließen?",
-      confirmLabel: "Trotzdem abschließen",
-      body: "Der Tag wird als abgerechnet vermerkt, aber es steht kein gezählter Bestand dabei. Eine Differenz lässt sich später nicht mehr belegen.",
+      title: count?.closed ? "Erneut abschließen?" : "Tag abschließen?",
+      confirmLabel: count?.closed ? "Erneut abschließen" : "Abschließen",
+      body: count?.closed
+        ? "Der Tag ist schon vermerkt. Ein weiterer Abschluss aktualisiert die Summen und legt eine neue Sicherung an."
+        : "Der Tag wird als abgerechnet vermerkt und eine Sicherung der Datenbank angelegt. Verkaufen bleibt danach möglich – neue Bons zählen dann zum nächsten Betriebstag.",
     });
-    if (ok) await run(() => api.closeDay(null), "Tag abgeschlossen");
+    if (ok) await run(() => api.closeDay(), "Tag abgeschlossen");
   }
 
   if (noEvent)
     return (
       <>
         <div className={layout.pageHead}>
-          <h1>Kassenschnitt</h1>
+          <h1>Tagesabschluss</h1>
         </div>
         <p className={s.empty}>
           Keine aktive Veranstaltung – zuerst unter „Veranstaltungen“ eine
@@ -113,20 +122,16 @@ export default function CashDeskAdmin() {
     return (
       <>
         <div className={layout.pageHead}>
-          <h1>Kassenschnitt</h1>
+          <h1>Tagesabschluss</h1>
         </div>
         <p className={s.empty}>Wird geladen …</p>
       </>
     );
 
-  const expected = toNumber(count.expected_cash);
-  const diff = count.counted_cash == null ? null : toNumber(count.difference);
-  const padDiff = toNumber(padValue) - expected;
-
   return (
     <>
       <div className={layout.pageHead}>
-        <h1>Kassenschnitt</h1>
+        <h1>Tagesabschluss</h1>
         <span className={s.day}>
           {new Date(count.business_day).toLocaleDateString("de-DE", {
             weekday: "long",
@@ -144,142 +149,53 @@ export default function CashDeskAdmin() {
 
       <div className={s.cards}>
         <section className={s.card}>
-          <h2>Was in der Kasse sein müsste</h2>
+          <h2>Was über die Theke ging</h2>
           <dl className={s.rows}>
             <Row label={`Bons (${count.bill_count})`} value={count.total_gross} />
             <Row label="Pfand eingenommen" value={count.total_deposit} />
-            <Row label="Pfand in Bons zurück" value={count.deposit_return_in_bills} minus />
+            <Row
+              label="Pfand in Bons zurück"
+              value={count.deposit_return_in_bills}
+              minus
+            />
             <Row
               label="Pfand einzeln ausgezahlt"
               value={count.standalone_deposit_return}
               minus
             />
             <div className={s.rule} />
-            <Row label="Bareinnahme" value={count.cash_income} strong />
-            <Row label="Wechselgeld zu Beginn" value={count.opening_float} />
-            <Row
-              label="Ein-/Auszahlungen"
-              value={count.movement_total}
-              signed
-            />
-            <div className={s.rule} />
-            <Row label="Soll-Bestand" value={count.expected_cash} big />
+            <Row label="Bareinnahme" value={count.cash_income} big />
           </dl>
-          <div className={s.cardActions}>
-            <Button
-              onClick={() => openPad("float", String(toNumber(count.opening_float)))}
-            >
-              Wechselgeld setzen
-            </Button>
-          </div>
-        </section>
-
-        <section className={s.card}>
-          <h2>Zählung &amp; Abschluss</h2>
-          {count.counted_cash == null ? (
-            <p className={s.empty}>
-              Noch nicht gezählt. Das Geld zählen, den Betrag eintippen – die
-              Differenz rechnet die Kasse.
-            </p>
-          ) : (
-            <>
-              <div className={`${s.counted} tnum`}>{euro(count.counted_cash)}</div>
-              <div
-                className={`${s.diff} ${Math.abs(diff ?? 0) < 0.005 ? s.good : s.bad} tnum`}
-              >
-                {Math.abs(diff ?? 0) < 0.005
-                  ? "stimmt genau"
-                  : `${(diff ?? 0) > 0 ? "Überschuss" : "Fehlbetrag"} ${euro(Math.abs(diff ?? 0))}`}
-              </div>
-            </>
-          )}
-          {count.closed && count.closed_at && (
-            <p className={s.empty}>
-              Abgeschlossen um {hhmm(count.closed_at)} Uhr. Neue Bons zählen bereits
-              zum nächsten Tag.
-            </p>
-          )}
-          <div className={s.cardActions}>
-            <Button
-              variant="primary"
-              disabled={busy}
-              onClick={() => openPad("count", String(expected))}
-            >
-              <Lock size={16} />
-              {count.closed ? "Zählung korrigieren" : "Zählen & abschließen"}
-            </Button>
-            {!count.closed && (
-              <Button disabled={busy} onClick={closeWithoutCount}>
-                Ohne Zählung abschließen
-              </Button>
-            )}
-          </div>
-        </section>
-
-        <section className={s.card}>
-          <h2>Geld rein &amp; raus</h2>
           <p className={s.hint}>
-            Alles, was ohne Verkauf in die Kasse kommt oder sie verlässt –
-            nachgelegtes Wechselgeld, Geld in den Tresor.
+            Was der Rechner mitbekommen hat. Trinkgeld und Geld im Tresor stehen
+            bewusst nicht hier – im Betrieb ließ sich das nie vollständig
+            erfassen.
           </p>
-          {movements.length === 0 ? (
-            <p className={s.empty}>Heute noch nichts bewegt.</p>
+          <div className={s.cardActions}>
+            <Button disabled={busy} onClick={() => void downloadPdf()}>
+              <FilePdf size={16} />
+              Übersicht als PDF
+            </Button>
+          </div>
+        </section>
+
+        <section className={s.card}>
+          <h2>Abschluss</h2>
+          {count.closed && count.closed_at ? (
+            <p className={s.hint}>
+              Abgeschlossen um {hhmm(count.closed_at)} Uhr, eine Sicherung liegt
+              vor. Neue Bons zählen bereits zum nächsten Betriebstag.
+            </p>
           ) : (
-            <div className={s.retList}>
-              {movements.map((m) => {
-                const amount = toNumber(m.amount);
-                return (
-                  <div key={m.id} className={s.ret}>
-                    <span
-                      className={`${s.moveIcon} ${amount > 0 ? s.good : s.bad}`}
-                      aria-hidden
-                    >
-                      {amount > 0 ? <Plus size={13} /> : <Minus size={13} />}
-                    </span>
-                    <span className={s.moveReason}>
-                      {m.reason || (amount > 0 ? "Einlage" : "Entnahme")}
-                    </span>
-                    <span className={s.retTime}>{hhmm(m.created_at)} Uhr</span>
-                    <span
-                      className={`${s.retSum} ${amount > 0 ? s.good : s.bad} tnum`}
-                    >
-                      {amount > 0 ? "+ " : "− "}
-                      {euro(Math.abs(amount))}
-                    </span>
-                    <Button
-                      small
-                      variant="danger"
-                      aria-label={`Bewegung über ${euro(Math.abs(amount))} löschen`}
-                      disabled={busy}
-                      onClick={async () => {
-                        const ok = await confirm({
-                          title: "Eintrag löschen?",
-                          danger: true,
-                          confirmLabel: "Löschen",
-                          body: `${m.reason || "Bargeldbewegung"} · ${euro(amount)}`,
-                        });
-                        if (ok)
-                          await run(
-                            () => api.deleteCashMovement(m.id),
-                            "Eintrag gelöscht",
-                          );
-                      }}
-                    >
-                      <Trash size={14} />
-                    </Button>
-                  </div>
-                );
-              })}
-            </div>
+            <p className={s.hint}>
+              Vermerkt den Tag als abgerechnet und legt eine Sicherung der
+              Datenbank an. Verkaufen bleibt danach möglich.
+            </p>
           )}
           <div className={s.cardActions}>
-            <Button onClick={() => openPad("in")}>
-              <Plus size={15} />
-              Geld einlegen
-            </Button>
-            <Button onClick={() => openPad("out")}>
-              <Minus size={15} />
-              Geld entnehmen
+            <Button variant="primary" disabled={busy} onClick={() => void closeDay()}>
+              <Lock size={16} />
+              {count.closed ? "Erneut abschließen" : "Tag abschließen"}
             </Button>
           </div>
         </section>
@@ -287,8 +203,8 @@ export default function CashDeskAdmin() {
         <section className={`${s.card} ${s.wide}`}>
           <h2>Pfand ohne Bon ausgezahlt</h2>
           <p className={s.hint}>
-            Für Gäste, die nur Gläser zurückbringen. Der Betrag geht direkt vom
-            Soll-Bestand ab.
+            Für Gäste, die nur Gläser zurückbringen. Der Betrag geht direkt von
+            der Bareinnahme ab.
           </p>
           {returns.length === 0 ? (
             <p className={s.empty}>Heute noch keine.</p>
@@ -326,58 +242,20 @@ export default function CashDeskAdmin() {
             </div>
           )}
           <div className={s.cardActions}>
-            <Button onClick={() => openPad("deposit", "2.00")}>
+            <Button
+              onClick={() => {
+                setPadValue("2.00");
+                setDepQty("1");
+                setPad(true);
+              }}
+            >
               Pfand auszahlen
             </Button>
           </div>
         </section>
       </div>
 
-      {pad === "float" && (
-        <PadModal
-          title="Wechselgeld zu Beginn"
-          hint="Der Betrag, der vor dem ersten Verkauf in der Kasse lag."
-          value={padValue}
-          onValue={setPadValue}
-          busy={busy}
-          onClose={() => setPad(null)}
-          onSubmit={() =>
-            run(() => api.setCashFloat(padValue || "0"), "Wechselgeld gespeichert")
-          }
-        />
-      )}
-
-      {pad === "count" && (
-        <PadModal
-          title={count.closed ? "Zählung korrigieren" : "Zählen & abschließen"}
-          hint={`Soll-Bestand ${euro(expected)} – jetzt den tatsächlich gezählten Betrag eintippen.`}
-          value={padValue}
-          onValue={setPadValue}
-          busy={busy}
-          confirmLabel={count.closed ? "Korrektur speichern" : "Tag abschließen"}
-          disabled={padValue === ""}
-          onClose={() => setPad(null)}
-          onSubmit={() =>
-            run(
-              () => api.closeDay(padValue || "0"),
-              count.closed ? "Zählung korrigiert" : "Tag abgeschlossen",
-            )
-          }
-          extra={
-            padValue === "" ? null : (
-              <div
-                className={`${s.padDiff} ${Math.abs(padDiff) < 0.005 ? s.good : s.bad}`}
-              >
-                {Math.abs(padDiff) < 0.005
-                  ? "stimmt genau"
-                  : `${padDiff > 0 ? "Überschuss" : "Fehlbetrag"} ${euro(Math.abs(padDiff))}`}
-              </div>
-            )
-          }
-        />
-      )}
-
-      {pad === "deposit" && (
+      {pad && (
         <PadModal
           title="Pfand auszahlen"
           hint="Betrag je Stück eintippen, dann die Anzahl wählen."
@@ -386,7 +264,7 @@ export default function CashDeskAdmin() {
           busy={busy}
           confirmLabel={`${depQty}× auszahlen · ${euro(toNumber(padValue) * Number(depQty))}`}
           disabled={toNumber(padValue) <= 0 || Number(depQty) <= 0}
-          onClose={() => setPad(null)}
+          onClose={() => setPad(false)}
           onSubmit={() =>
             run(
               () => api.createDepositReturn(padValue, Number(depQty)),
@@ -413,55 +291,6 @@ export default function CashDeskAdmin() {
         />
       )}
 
-      {(pad === "in" || pad === "out") && (
-        <PadModal
-          title={pad === "in" ? "Geld einlegen" : "Geld entnehmen"}
-          hint={
-            pad === "in"
-              ? "Wechselgeld, das ohne Verkauf in die Kasse kommt."
-              : "Geld, das die Kasse verlässt – etwa in den Tresor."
-          }
-          value={padValue}
-          onValue={setPadValue}
-          busy={busy}
-          confirmLabel={
-            pad === "in"
-              ? `${euro(toNumber(padValue))} einlegen`
-              : `${euro(toNumber(padValue))} entnehmen`
-          }
-          disabled={toNumber(padValue) <= 0}
-          onClose={() => setPad(null)}
-          onSubmit={() =>
-            run(
-              () =>
-                api.addCashMovement(
-                  pad === "in" ? padValue : `-${padValue}`,
-                  reason,
-                ),
-              pad === "in" ? "Einlage gebucht" : "Entnahme gebucht",
-            )
-          }
-          extra={
-            <div className={s.reasonRow}>
-              <span className={s.reasonLabel}>Grund</span>
-              <div className={s.reasonChips}>
-                {(pad === "in" ? REASONS_IN : REASONS_OUT).map((r) => (
-                  <button
-                    key={r}
-                    type="button"
-                    aria-pressed={reason === r}
-                    className={`${s.reasonChip} ${reason === r ? s.qtySel : ""}`}
-                    onClick={() => setReason(reason === r ? "" : r)}
-                  >
-                    {r}
-                  </button>
-                ))}
-              </div>
-            </div>
-          }
-        />
-      )}
-
       {dialog}
     </>
   );
@@ -470,29 +299,22 @@ export default function CashDeskAdmin() {
 function Row({
   label,
   value,
-  strong,
   big,
   minus,
-  signed,
 }: {
   label: string;
   value: string;
-  strong?: boolean;
   big?: boolean;
   /** Immer als Abzug darstellen. */
   minus?: boolean;
-  /** Vorzeichen aus dem Wert übernehmen (+/−). */
-  signed?: boolean;
 }) {
-  const cls = [s.row, strong && s.strong, big && s.bigRow].filter(Boolean).join(" ");
-  const n = toNumber(value);
-  const prefix = minus ? "− " : signed && n > 0 ? "+ " : signed && n < 0 ? "− " : "";
+  const cls = [s.row, big && s.bigRow].filter(Boolean).join(" ");
   return (
     <div className={cls}>
       <dt>{label}</dt>
       <dd className="tnum">
-        {prefix}
-        {euro(signed ? Math.abs(n) : value)}
+        {minus ? "− " : ""}
+        {euro(value)}
       </dd>
     </div>
   );

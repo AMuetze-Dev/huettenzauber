@@ -41,7 +41,7 @@ export default function AdminLayout() {
             className={({ isActive }) => (isActive ? s.active : "")}
           >
             <Coins size={18} />
-            Kassenschnitt
+            Tagesabschluss
           </NavLink>
           <NavLink
             to="/verwaltung/statistik"

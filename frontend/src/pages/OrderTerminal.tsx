@@ -14,7 +14,6 @@ import {
   CheckCircle,
   Coins,
   GearSix,
-  HandCoins,
   Minus,
   Money,
   Plus,
@@ -26,6 +25,7 @@ import {
 import { api, ApiError } from "../api/client";
 import { NumPad } from "../components/NumPad";
 import { useToast } from "../components/Toast";
+import { useDialogs } from "../components/useDialogs";
 import { Topbar } from "../components/Topbar";
 import topbar from "../components/Topbar.module.css";
 import type { ActiveOrder, StockItem, Variant } from "../api/types";
@@ -40,7 +40,7 @@ import {
   type LineLookup,
 } from "../order/cartReducer";
 import { catIcon } from "../order/catIcon";
-import { changeSuggestions, cents, COINS, NOTES } from "../order/change";
+import { changeSuggestions, cents } from "../order/change";
 import { depositKinds, type DepositKind } from "../order/deposits";
 import { useActiveOrderStream } from "../order/useActiveOrderStream";
 import { useLongPress } from "../order/useLongPress";
@@ -87,6 +87,7 @@ function TopNav() {
 
 export default function OrderTerminal() {
   const toast = useToast();
+  const { confirm, dialog } = useDialogs();
   const { loading, error, event, categories, items, favorites, reload } =
     useOrderData();
   const [cart, dispatch] = useReducer(cartReducer, emptyCart);
@@ -236,8 +237,16 @@ export default function OrderTerminal() {
   }
 
   /** Warenkorb verwerfen - muss den Server erreichen, sonst hängt das
-   *  Kundendisplay auf dem alten Stand. */
+   *  Kundendisplay auf dem alten Stand. Vorher wird gefragt: ein Fehlgriff
+   *  kostet sonst die ganze aufgenommene Bestellung. */
   async function clearCart() {
+    const ok = await confirm({
+      title: "Bestellung verwerfen?",
+      danger: true,
+      confirmLabel: "Ja, leeren",
+      body: `${totals.count} Artikel über ${euro(totals.due)} werden gelöscht. Das lässt sich nicht rückgängig machen.`,
+    });
+    if (!ok) return;
     dispatch({ type: "clear" });
     setSheetOpen(false);
     try {
@@ -252,12 +261,8 @@ export default function OrderTerminal() {
     }
   }
 
-  /**
-   * Bon schreiben. `tip` ist das Geld, das der Gast dagelassen hat ("stimmt
-   * so") - es wandert als Bargeldbewegung in die Kasse, nicht in den Umsatz.
-   * Ohne das weist der Kassenschnitt abends einen Überschuss aus.
-   */
-  async function pay({ tip }: { tip: number } = { tip: 0 }) {
+  /** Bon schreiben. Was der Gast dalässt, wird nicht gebucht (D41). */
+  async function pay() {
     if (busy || totals.count === 0) return;
     setBusy(true);
     const summe = totals.due;
@@ -267,19 +272,6 @@ export default function OrderTerminal() {
       setPayOpen(false);
       setSheetOpen(false);
       toast.success(`Bon #${bill.id} · ${euro(summe)} kassiert`);
-
-      if (tip > 0) {
-        try {
-          await api.addCashMovement(tip.toFixed(2), "Trinkgeld");
-          toast.success(`${euro(tip)} Trinkgeld gebucht`);
-        } catch {
-          // Der Bon steht - nur das Trinkgeld fehlt. Sagen statt schlucken,
-          // sonst sucht abends jemand die Differenz.
-          toast.error(
-            `Trinkgeld ${euro(tip)} nicht gebucht – im Kassenschnitt nachtragen.`,
-          );
-        }
-      }
     } catch (e) {
       toast.error(
         e instanceof ApiError && !e.isOffline
@@ -507,6 +499,8 @@ export default function OrderTerminal() {
           onBack={() => setPayOpen(false)}
         />
       )}
+
+      {dialog}
     </Screen>
   );
 }
@@ -608,6 +602,7 @@ function MultiCard({
     Math.min(...prices) === Math.max(...prices)
       ? euro(prices[0])
       : `${euro(Math.min(...prices))}–${euro(Math.max(...prices))}`;
+  const deposit = toNumber(item.deposit_amount);
   return (
     <div
       className={`${styles.card} ${total > 0 ? styles.has : ""} ${open ? styles.open : ""} ${item.color ? styles.tinted : ""}`}
@@ -619,6 +614,7 @@ function MultiCard({
           <b>{range}</b>
           <small>{item.variants.length} Größen</small>
         </span>
+        {deposit > 0 && <span className={styles.dep}>+ {euro(deposit)} Pfand</span>}
         {total > 0 && <span className={styles.badge}>{total}</span>}
       </button>
       {open && (
@@ -980,10 +976,12 @@ function PfandOverlay({
 /**
  * Bar kassieren.
  *
- * Der Gast legt hin, was er hat - 45 € bei 40,30 €, oder 42 €. Deshalb wird
- * die Stückelung angetippt und aufaddiert, statt einen Betrag zu suchen.
- * Bleibt etwas übrig und der Gast sagt "stimmt so", geht die Differenz als
- * Trinkgeld in die Kasse, sonst stimmt der Kassenschnitt abends nicht.
+ * Der Gast legt hin, was er hat - 45 € bei 40,30 €, oder 42 €. Eingetippt
+ * wird deshalb der Betrag selbst: die Zehnertastatur steht offen da, drei
+ * Vorschläge nehmen die häufigsten Fälle vorweg. Vorher wurde die Stückelung
+ * angetippt und aufaddiert; am Tresen war das mehr Tipperei, nicht weniger.
+ * Gebucht wird immer der Bon-Betrag - ein "stimmt so" wandert in die Dose und
+ * nicht in den Rechner (D41).
  */
 function PayOverlay({
   due,
@@ -995,24 +993,19 @@ function PayOverlay({
   due: number;
   count: number;
   busy: boolean;
-  onConfirm: (opts: { tip: number }) => void;
+  onConfirm: () => void;
   onBack: () => void;
 }) {
-  const [received, setReceived] = useState(0);
-  const [padOpen, setPadOpen] = useState(false);
-  const [padValue, setPadValue] = useState("");
+  // Ein Zustand, nicht zwei: was auf der Tastatur steht, ist der erhaltene
+  // Betrag. Vorschlaege schreiben nur in dasselbe Feld.
+  const [given, setGiven] = useState("");
 
   const suggestions = useMemo(() => changeSuggestions(due), [due]);
+  const received = cents(toNumber(given));
   const change = cents(received - due);
-  const nothingGiven = received === 0;
+  const nothingGiven = given === "" || received === 0;
   const enough = change >= -0.005;
-  const add = (value: number) => setReceived((r) => cents(r + value));
-
-  const takePad = () => {
-    setReceived(cents(toNumber(padValue)));
-    setPadValue("");
-    setPadOpen(false);
-  };
+  const setzen = (value: number) => setGiven(value.toFixed(2));
 
   return (
     <div className={`${styles.overlay} ${styles.overlayCenter}`}>
@@ -1021,33 +1014,18 @@ function PayOverlay({
           <h2>Bar kassieren</h2>
           <span className={styles.sheetHint}>{count} Artikel</span>
         </div>
-        <div className={`${styles.payBig} tnum`}>
-          {euro(due)}
-          <small>inkl. Pfand</small>
-        </div>
 
-        {padOpen ? (
-          <div className={styles.payPad}>
-            <NumPad value={padValue} onChange={setPadValue} />
-            <div className={styles.payPadRow}>
-              <button className={styles.ghostWide} onClick={() => setPadOpen(false)}>
-                Abbrechen
-              </button>
-              <button
-                className={styles.ghostWide}
-                disabled={padValue === ""}
-                onClick={takePad}
-              >
-                {euro(toNumber(padValue))} übernehmen
-              </button>
+        <div className={styles.payBody}>
+          <div className={styles.payLeft}>
+            <div className={`${styles.payBig} tnum`}>
+              {euro(due)}
+              <small>inkl. Pfand</small>
             </div>
-          </div>
-        ) : (
-          <>
+
             <div className={styles.quickRow}>
               <button
                 className={`${styles.quickBtn} ${received === due ? styles.sel : ""}`}
-                onClick={() => setReceived(due)}
+                onClick={() => setzen(due)}
               >
                 <b className="tnum">passend</b>
                 <small className="tnum">{euro(due)}</small>
@@ -1056,116 +1034,59 @@ function PayOverlay({
                 <button
                   key={v}
                   className={`${styles.quickBtn} ${received === v ? styles.sel : ""}`}
-                  onClick={() => setReceived(v)}
+                  onClick={() => setzen(v)}
                 >
                   <b className="tnum">{euroShort(v)}</b>
                   <small className="tnum">zurück {euro(cents(v - due))}</small>
                 </button>
               ))}
-              <button className={styles.quickBtn} onClick={() => setPadOpen(true)}>
-                <b>Betrag</b>
-                <small>frei eingeben</small>
-              </button>
             </div>
 
-            <div className={styles.denomRow}>
-              <span className={styles.denomLabel}>Gast
-                <br />gibt</span>
-              <div className={styles.denomGroup} aria-label="Scheine">
-                {NOTES.map((v) => (
-                  <button
-                    key={v}
-                    className={styles.noteBtn}
-                    aria-label={`${euroShort(v)} dazulegen`}
-                    onClick={() => add(v)}
-                  >
-                    <span className="tnum">{v}</span>
-                    <small>€</small>
-                  </button>
-                ))}
-              </div>
-              <span className={styles.denomSep} aria-hidden />
-              <div className={styles.denomGroup} aria-label="Münzen">
-                {COINS.map((v) => (
-                  <button
-                    key={v}
-                    className={styles.coinBtn}
-                    aria-label={`${euroShort(v)} dazulegen`}
-                    onClick={() => add(v)}
-                  >
-                    <span className="tnum">{v >= 1 ? v : 50}</span>
-                    <small>{v >= 1 ? "€" : "ct"}</small>
-                  </button>
-                ))}
-              </div>
-              <button
-                className={styles.denomReset}
-                aria-label="Erhaltenen Betrag zurücksetzen"
-                disabled={nothingGiven}
-                onClick={() => setReceived(0)}
-              >
-                <ArrowUUpLeft size={18} />
-              </button>
+            <div
+              className={`${styles.changeBox} ${!nothingGiven && !enough ? styles.changeShort : ""}`}
+              aria-live="polite"
+            >
+              {nothingGiven ? (
+                <span className={styles.changeIdle}>
+                  Passend erhalten? Direkt abschließen. Sonst eintippen, was
+                  der Gast hinlegt.
+                </span>
+              ) : (
+                <>
+                  <div className={styles.changeInfo}>
+                    <span className={styles.changeGot}>
+                      Erhalten <b className="tnum">{euro(received)}</b>
+                    </span>
+                    <span className={styles.changeLabel}>
+                      {enough ? "Rückgeld" : "Es fehlen noch"}
+                    </span>
+                  </div>
+                  <span className={`${styles.changeValue} tnum`}>
+                    {euro(Math.abs(change))}
+                  </span>
+                </>
+              )}
             </div>
-          </>
-        )}
 
-        {!padOpen && (
-          <>
-        <div
-          className={`${styles.changeBox} ${!nothingGiven && !enough ? styles.changeShort : ""}`}
-          aria-live="polite"
-        >
-          {nothingGiven ? (
-            <span className={styles.changeIdle}>
-              Passend erhalten? Direkt abschließen. Sonst antippen, was der Gast
-              hinlegt.
-            </span>
-          ) : (
-            <>
-              <div className={styles.changeInfo}>
-                <span className={styles.changeGot}>
-                  Erhalten <b className="tnum">{euro(received)}</b>
-                </span>
-                <span className={styles.changeLabel}>
-                  {enough ? "Rückgeld" : "Es fehlen noch"}
-                </span>
-              </div>
-              <span className={`${styles.changeValue} tnum`}>
-                {euro(Math.abs(change))}
-              </span>
-            </>
-          )}
+            <button className={styles.confirmBtn} disabled={busy} onClick={onConfirm}>
+              <CheckCircle size={22} weight="fill" />
+              {busy
+                ? "Wird verarbeitet …"
+                : nothingGiven
+                  ? "Passend erhalten · abschließen"
+                  : `Abschließen · ${euro(Math.max(0, change))} zurück`}
+            </button>
+
+            <button className={styles.backBtn} onClick={onBack} disabled={busy}>
+              Zurück zur Bestellung
+            </button>
+          </div>
+
+          <div className={styles.payRight}>
+            <span className={styles.padLabel}>Gast gibt</span>
+            <NumPad value={given} onChange={setGiven} placeholder="0,00" />
+          </div>
         </div>
-
-        <button
-          className={styles.confirmBtn}
-          disabled={busy}
-          onClick={() => onConfirm({ tip: 0 })}
-        >
-          <CheckCircle size={22} weight="fill" />
-          {busy
-            ? "Wird verarbeitet …"
-            : nothingGiven
-              ? "Passend erhalten · abschließen"
-              : `Abschließen · ${euro(Math.max(0, change))} zurück`}
-        </button>
-
-        {!busy && enough && change > 0.005 && (
-          <button
-            className={styles.secondaryBtn}
-            onClick={() => onConfirm({ tip: change })}
-          >
-            <HandCoins size={20} />
-            Stimmt so · {euro(change)} Trinkgeld
-          </button>
-        )}
-
-        <button className={styles.backBtn} onClick={onBack} disabled={busy}>
-          Zurück zur Bestellung
-        </button>
-          </>
-        )}
       </div>
     </div>
   );

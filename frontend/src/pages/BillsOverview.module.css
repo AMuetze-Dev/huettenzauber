@@ -27,6 +27,25 @@
   color: var(--text-muted);
 }
 
+.pdfBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 38px;
+  padding: 0 13px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--tile);
+  color: var(--text);
+  font-size: 13px;
+}
+.pdfBtn:active {
+  background: var(--tile-active);
+}
+.pdfBtn:disabled {
+  opacity: 0.45;
+}
+
 .body {
   flex: 1;
   display: flex;

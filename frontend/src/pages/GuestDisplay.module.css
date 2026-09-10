@@ -57,42 +57,81 @@
 }
 
 .lines {
+  /* Einzige Quelle für die Zeilenhöhe - GuestDisplay liest sie aus, um
+     auszurechnen, wie viele Positionen aufs Display passen. */
+  --guest-line: 48px;
+
   flex: 1;
   min-width: 0;
+  min-height: 0;
   display: flex;
   flex-direction: column;
-  padding: 18px 22px;
+  padding: 14px 24px;
+  /* Gekürzt wird über `fitRows` - hier nur der Notnagel, damit im Zweifel
+     nichts über den Rand ragt. */
+  overflow: hidden;
 }
+
+/* `align-items: center` ist hier nicht Geschmack: mit `baseline` saß der Text
+   an der Oberkante der 48 px, die Trennlinie 48 px darunter - dadurch klebte
+   sie optisch an der folgenden Zeile statt zwischen beiden zu stehen. */
 .line {
   display: flex;
-  align-items: baseline;
-  gap: 12px;
-  height: 44px;
+  align-items: center;
+  gap: 14px;
+  height: var(--guest-line);
   flex: none;
-  border-bottom: 1px solid rgba(236, 233, 228, 0.07);
+  border-bottom: 1px solid rgba(236, 233, 228, 0.08);
+  transition: background-color 700ms ease-out;
 }
+.line:last-of-type {
+  border-bottom: none;
+}
+
+/* Menge als Marke - der Gast erfasst "3×" schneller als eine nackte Ziffer
+   in einer Textspalte. */
 .line .q {
-  width: 40px;
-  color: var(--accent);
-  font-weight: 500;
+  flex: none;
+  min-width: 46px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 99px;
+  background: var(--tile-active);
+  color: var(--accent-bright);
   font-size: 15px;
+  font-weight: 600;
 }
 .line .name {
   flex: 1;
   min-width: 0;
-  font-size: 16px;
+  font-size: 17.5px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 .line .sum {
+  flex: none;
   font-weight: 500;
-  font-size: 16px;
-  color: rgba(236, 233, 228, 0.8);
+  font-size: 17.5px;
+  color: rgba(236, 233, 228, 0.82);
 }
+
+/* Gerade gebucht: kurz hinterlegt, damit der Gast sieht, was dazukam.
+   Kein Blinken - das Display läuft stundenlang. */
+.fresh {
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+}
+.fresh .q {
+  background: var(--tile-active-strong);
+}
+
 .more {
-  padding-top: 10px;
-  font-size: 13px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  font-size: 13.5px;
   color: var(--text-muted);
 }
 

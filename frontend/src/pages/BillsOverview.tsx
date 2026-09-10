@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, ArrowUUpLeft, Prohibit } from "@phosphor-icons/react";
+import { ArrowLeft, ArrowUUpLeft, FilePdf, Prohibit } from "@phosphor-icons/react";
 import { api, ApiError } from "../api/client";
 import type { Bill, BillListRow, DaySummary } from "../api/types";
 import { useToast } from "../components/Toast";
 import { Topbar } from "../components/Topbar";
 import styles from "./BillsOverview.module.css";
 import topbar from "../components/Topbar.module.css";
+import { saveFile } from "../lib/download";
 import { euro, qtyLabel } from "../lib/money";
 
 function hhmm(iso: string): string {
@@ -69,6 +70,24 @@ export default function BillsOverview() {
     };
   }, [selectedId, rows]);
 
+  /** Ausdruck des Tages holen - Bonliste samt Verbrauch. */
+  async function downloadPdf() {
+    if (busy) return;
+    setBusy(true);
+    try {
+      saveFile(await api.billsPdf());
+      toast.success("Übersicht gespeichert");
+    } catch (e) {
+      toast.error(
+        e instanceof ApiError && !e.isOffline
+          ? e.detail
+          : "Kasse nicht erreichbar – Ausdruck fehlgeschlagen.",
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function toggleVoid() {
     if (selectedId == null || busy || !detail) return;
     setBusy(true);
@@ -107,6 +126,14 @@ export default function BillsOverview() {
           </span>
         )}
         <span style={{ flex: 1 }} />
+        <button
+          className={styles.pdfBtn}
+          disabled={busy || noEvent}
+          onClick={() => void downloadPdf()}
+        >
+          <FilePdf size={16} />
+          Übersicht als PDF
+        </button>
         <label className={styles.toggle}>
           <input
             type="checkbox"

@@ -258,7 +258,14 @@ class DepositReturn(Base):
 
 
 class DayClose(Base):
-    """Merker fuer den weichen Tagesabschluss inkl. Kassenbestand."""
+    """Merker fuer den weichen Tagesabschluss.
+
+    Haelt fest, was an diesem Betriebstag ueber die Theke ging. Ein
+    gezaehlter Kassenbestand steht hier bewusst NICHT: Trinkgeld und
+    Zwischenablagen im Tresor lassen sich im laufenden Betrieb nicht
+    zuverlaessig erfassen, ein Soll-Ist-Vergleich waere damit nur
+    scheingenau (siehe D41 in ARCHITEKTUR.md).
+    """
 
     __tablename__ = "day_close"
 
@@ -271,43 +278,3 @@ class DayClose(Base):
     )
     total_gross: Mapped[Decimal] = mapped_column(MONEY)
     total_deposit: Mapped[Decimal] = mapped_column(MONEY, server_default="0")
-    # Wechselgeld-Startbestand der Kassenlade (vom Bediener erfasst)
-    opening_float: Mapped[Decimal] = mapped_column(MONEY, server_default="0")
-    # Gezaehlter Ist-Bestand beim Abschluss (optional)
-    counted_cash: Mapped[Decimal | None] = mapped_column(MONEY, nullable=True)
-
-
-class CashMovement(Base):
-    """Bargeld, das ausserhalb des Verkaufs in die Kasse kommt oder sie
-    verlaesst: Wechselgeld nachgelegt (+), Tageslosung in den Tresor (−).
-
-    Ohne diese Zeilen stimmt der Soll-Bestand am Abend nicht mit dem ueberein,
-    was tatsaechlich in der Kasse liegt.
-    """
-
-    __tablename__ = "cash_movement"
-
-    id: Mapped[int] = mapped_column(primary_key=True)
-    event_id: Mapped[int] = mapped_column(ForeignKey("event.id"), index=True)
-    business_day: Mapped[date] = mapped_column(Date, index=True)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
-    )
-    # Vorzeichenbehaftet: positiv = Einlage, negativ = Entnahme.
-    amount: Mapped[Decimal] = mapped_column(MONEY)
-    reason: Mapped[str] = mapped_column(String(120), server_default="")
-
-
-class CashFloat(Base):
-    """Startgeld je Veranstaltung + Betriebstag, unabhaengig vom Abschluss."""
-
-    __tablename__ = "cash_float"
-
-    event_id: Mapped[int] = mapped_column(
-        ForeignKey("event.id", ondelete="CASCADE"), primary_key=True
-    )
-    business_day: Mapped[date] = mapped_column(Date, primary_key=True)
-    amount: Mapped[Decimal] = mapped_column(MONEY, server_default="0")
-    updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
-    )

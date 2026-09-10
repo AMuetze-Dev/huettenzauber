@@ -2,19 +2,9 @@
  * Rückgeld am Tresen.
  *
  * Gäste legen selten den nächsthöheren Schein hin: bei 40,30 € kommen auch
- * mal 45 € oder 42 €. Der Bediener soll deshalb die Stückelung antippen
- * können, die tatsächlich auf dem Tresen liegt, statt einen Betrag zu suchen.
+ * mal 45 € oder 42 €. Eingetippt wird deshalb der Betrag, den der Gast
+ * hinlegt; die Vorschläge hier sparen nur die häufigsten Fälle ein.
  */
-
-/** Scheine, die am Ausschank wirklich über den Tresen gehen. */
-export const NOTES = [50, 20, 10, 5] as const;
-
-/** Münzen. Kleiner als 50 ct kommt beim Kassieren nicht vor - dafür gibt es
- *  die freie Eingabe. */
-export const COINS = [2, 1, 0.5] as const;
-
-/** Beides zusammen, absteigend - für Tests und Summenlogik. */
-export const DENOMINATIONS = [...NOTES, ...COINS] as const;
 
 const CENT = 0.005;
 

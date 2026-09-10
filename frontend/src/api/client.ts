@@ -3,7 +3,7 @@ import type {
   Bill,
   BillListRow,
   CashCount,
-  CashMovement,
+  DayClose,
   Catalog,
   Category,
   DaySummary,
@@ -256,32 +256,59 @@ export const api = {
   deleteDepositReturn: (id: number) =>
     req<void>(`/deposit-returns/${id}`, { method: "DELETE" }),
 
-  // Kassenschnitt
+  // Tagesabschluss
   daySummary: (day?: string) =>
     req<DaySummary>(`/day-summary${day ? `?day=${day}` : ""}`),
   cashCount: (day?: string) =>
     req<CashCount>(`/cash-count${day ? `?day=${day}` : ""}`),
-  setCashFloat: (amount: string, day?: string) =>
-    req<CashCount>(`/cash-float${day ? `?day=${day}` : ""}`, {
-      method: "PUT",
-      body: JSON.stringify({ amount }),
-    }),
-  cashMovements: (day?: string) =>
-    req<CashMovement[]>(`/cash-movements${day ? `?day=${day}` : ""}`),
-  addCashMovement: (amount: string, reason: string, day?: string) =>
-    req<CashMovement>(`/cash-movements${day ? `?day=${day}` : ""}`, {
-      method: "POST",
-      body: JSON.stringify({ amount, reason }),
-    }),
-  deleteCashMovement: (id: number) =>
-    req<void>(`/cash-movements/${id}`, { method: "DELETE" }),
-  closeDay: (counted_cash?: string | null, day?: string) =>
-    req<unknown>(`/day-close${day ? `?day=${day}` : ""}`, {
-      method: "POST",
-      body: JSON.stringify({ counted_cash: counted_cash ?? null }),
-    }),
+  closeDay: (day?: string) =>
+    req<DayClose>(`/day-close${day ? `?day=${day}` : ""}`, { method: "POST" }),
 
   // Statistik
   statistics: (day?: string) =>
     req<Statistics>(`/statistics${day ? `?day=${day}` : ""}`),
+
+  // Ausdruck
+  billsPdf: (day?: string) => fetchPdf(`/bills/export.pdf${day ? `?day=${day}` : ""}`),
 };
+
+export interface PdfDownload {
+  blob: Blob;
+  filename: string;
+}
+
+/** Holt ein PDF samt vorgeschlagenem Dateinamen.
+ *
+ * Kein `<a href>` auf den Endpunkt: der Zugangscode reist im Kopf `X-Access-Code`
+ * mit, ein normaler Link würde ihn nicht mitnehmen und beim Wirt mit 401
+ * antworten.
+ */
+async function fetchPdf(path: string): Promise<PdfDownload> {
+  const code = getAccessCode();
+  let res: Response;
+  try {
+    res = await fetch(BASE + path, {
+      headers: code ? { "X-Access-Code": code } : {},
+    });
+  } catch {
+    markConnection(false);
+    throw new ApiError(0, "Server nicht erreichbar");
+  }
+  markConnection(true);
+  if (!res.ok) {
+    let detail = `Fehler ${res.status}`;
+    try {
+      const data = JSON.parse(await res.text()) as { detail?: string };
+      if (data?.detail) detail = data.detail;
+    } catch {
+      /* PDF-Route antwortet im Fehlerfall JSON - wenn nicht, bleibt der Status */
+    }
+    throw new ApiError(res.status, detail);
+  }
+  return { blob: await res.blob(), filename: filenameFrom(res) };
+}
+
+function filenameFrom(res: Response): string {
+  const cd = res.headers.get("content-disposition") ?? "";
+  return /filename="([^"]+)"/.exec(cd)?.[1] ?? "rechnungsuebersicht.pdf";
+}

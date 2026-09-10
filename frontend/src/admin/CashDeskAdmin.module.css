@@ -59,10 +59,6 @@
   margin: 0;
   white-space: nowrap;
 }
-.strong {
-  color: var(--text);
-  font-weight: 500;
-}
 .bigRow {
   color: var(--text);
   font-size: 15px;
@@ -78,32 +74,6 @@
   height: 1px;
   background: rgba(236, 233, 228, 0.12);
   margin: 3px 0;
-}
-
-.counted {
-  font-size: 34px;
-  font-weight: 500;
-  letter-spacing: -0.02em;
-}
-.diff,
-.padDiff {
-  font-size: 14px;
-  font-weight: 500;
-}
-.padDiff {
-  min-height: 44px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--border);
-  font-variant-numeric: tabular-nums;
-}
-.good {
-  color: var(--accent-bright);
-}
-.bad {
-  color: var(--danger);
 }
 
 .empty,
@@ -150,46 +120,6 @@
 .retSum {
   font-weight: 500;
   color: var(--danger);
-}
-
-.moveIcon {
-  width: 24px;
-  height: 24px;
-  flex: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 99px;
-  border: 1px solid currentColor;
-}
-.moveReason {
-  flex: 1;
-  min-width: 0;
-  overflow-wrap: anywhere;
-}
-
-.reasonRow {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-.reasonLabel {
-  font-size: 12px;
-  color: var(--text-muted);
-}
-.reasonChips {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-.reasonChip {
-  min-height: var(--touch);
-  padding: 0 14px;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--border);
-  background: var(--tile);
-  color: var(--text);
-  font-size: 13.5px;
 }
 
 .qtyRow {

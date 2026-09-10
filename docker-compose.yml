@@ -32,6 +32,9 @@ services:
     environment:
       DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER:-root}:${POSTGRES_PASSWORD:-root}@db:5432/${POSTGRES_DB:-huettenzauber}
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000,http://localhost}
+      # Wie in der Produktion: sonst schreibt der Container UTC in Logs und
+      # Sicherungsnamen, und Entwicklung und Pi weichen um zwei Stunden ab.
+      TZ: ${TZ:-Europe/Berlin}
     command:
       - sh
       - -c

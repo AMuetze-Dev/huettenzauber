@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { changeSuggestions, cents, COINS, DENOMINATIONS, NOTES } from "./change";
+import { changeSuggestions, cents } from "./change";
 
 describe("cents", () => {
   it("rundet auf ganze Cent", () => {
@@ -10,37 +10,6 @@ describe("cents", () => {
     let n = 0;
     for (let i = 0; i < 10; i++) n = cents(n + 0.5);
     expect(n).toBe(5);
-  });
-});
-
-describe("Stückelung", () => {
-  it("Scheine und Münzen sind getrennt", () => {
-    expect([...NOTES]).toEqual([50, 20, 10, 5]);
-    expect([...COINS]).toEqual([2, 1, 0.5]);
-  });
-
-  it("keine Überschneidung zwischen Scheinen und Münzen", () => {
-    expect(NOTES.some((n) => (COINS as readonly number[]).includes(n))).toBe(false);
-  });
-
-  it("jeder Schein ist mindestens 5 €, jede Münze höchstens 2 €", () => {
-    expect(Math.min(...NOTES)).toBe(5);
-    expect(Math.max(...COINS)).toBe(2);
-  });
-
-  it("enthält die Scheine und Münzen vom Tresen", () => {
-    expect([...DENOMINATIONS]).toEqual([50, 20, 10, 5, 2, 1, 0.5]);
-  });
-
-  it("ist absteigend sortiert – der größte Schein zuerst", () => {
-    const arr = [...DENOMINATIONS];
-    expect(arr).toEqual([...arr].sort((a, b) => b - a));
-  });
-
-  it("jede Stückelung lässt sich zu jedem Cent-Betrag kombinieren", () => {
-    // 0,50 als kleinste Einheit: ungerade Cent-Beträge kommen über die freie
-    // Eingabe, nicht über die Knöpfe.
-    expect(Math.min(...DENOMINATIONS)).toBe(0.5);
   });
 });
 

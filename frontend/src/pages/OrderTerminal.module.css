@@ -51,8 +51,10 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 5px;
-  min-height: 76px;
+  gap: 4px;
+  /* Sechs Kategorien muessen ohne Rollbalken auf 600 px passen. */
+  min-height: 66px;
+  flex: none;
   border-radius: 10px;
   padding: 4px 2px;
   color: var(--text-muted);
@@ -198,13 +200,19 @@
   padding: 40px 0;
 }
 
+/* Die Kachel ist nur Rahmen und Farbe - getippt wird der Knopf darin.
+   Deshalb sitzt das Polster im Knopf und nicht hier: sonst reicht die
+   Kachel (im Raster auf Zeilenhoehe gestreckt) weiter als ihre Klickflaeche,
+   und der Bediener trifft neben einer Kachel mit mehreren Groessen ins
+   Leere. */
 .card {
+  position: relative;
   min-width: 0;
   border-radius: var(--radius-tile);
-  padding: 12px 13px;
+  padding: 0;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
-  gap: 9px;
   background: var(--tile);
   border: 1px solid var(--border);
 }
@@ -216,10 +224,12 @@
   border-color: var(--border-focus);
 }
 .cardBtn {
-  position: relative;
+  /* Fuellt die Kachel restlos aus - Sicht- und Klickflaeche sind dasselbe. */
+  flex: 1;
   display: flex;
   flex-direction: column;
   gap: 6px;
+  padding: 12px 13px;
   text-align: left;
   color: var(--text);
 }
@@ -248,6 +258,7 @@
   font-size: 11px;
   color: var(--text-muted);
 }
+/* Standard: haengt am Rand seines Traegers (Schnellzugriff, Groessen-Chip). */
 .badge {
   position: absolute;
   top: -4px;
@@ -265,12 +276,21 @@
   justify-content: center;
 }
 
+/* In der Artikelkachel gibt es keinen Rand zum Ueberhaengen: der Knopf
+   fuellt sie aus, und `overflow: hidden` wuerde ein negativ versetztes
+   Abzeichen abschneiden. Deshalb hier nach innen. */
+.card > .badge,
+.cardBtn .badge {
+  top: 8px;
+  right: 9px;
+}
+
 .chips {
   display: flex;
   gap: 7px;
   flex-wrap: wrap;
   border-top: 1px solid rgba(236, 233, 228, 0.12);
-  padding-top: 9px;
+  padding: 9px 13px 12px;
 }
 .chip {
   position: relative;
@@ -423,7 +443,10 @@
   border-top: 1px solid var(--border-active);
   border-radius: 16px 16px 0 0;
   padding: 16px 18px 18px;
-  max-height: 60vh;
+  /* Wächst mit dem Inhalt bis fast an den oberen Rand. Vorher stand hier
+     60vh - dann kam schon bei zehn Positionen ein Rollbalken, obwohl der
+     halbe Bildschirm leer war. */
+  max-height: calc(100% - 12px);
   display: flex;
   flex-direction: column;
 }
@@ -570,14 +593,46 @@
 }
 
 /* Bar kassieren */
+/* Zwei Spalten: links der faellige Betrag samt Rueckgeld, rechts die
+   Zehnertastatur. Auf 1024x600 passt beides nebeneinander, ohne dass eine
+   Seite scrollt - deshalb ist die Karte breiter als der Rest der Dialoge. */
 .payCard {
-  width: min(560px, 100%);
+  width: min(880px, 100%);
   max-height: 100%;
   overflow-y: auto;
   background: var(--chrome);
   border-radius: 16px;
   padding: 18px 22px 16px;
   border: 1px solid #7d766c;
+}
+.payBody {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 268px;
+  gap: 20px;
+  align-items: start;
+  margin-top: 10px;
+}
+.payLeft {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.payRight {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.padLabel {
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+/* Schmaler Bildschirm: untereinander, Tastatur zuerst greifbar am Daumen. */
+@media (max-width: 780px) {
+  .payBody {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 .payHead {
   display: flex;
@@ -592,7 +647,7 @@
   font-size: 40px;
   font-weight: 500;
   letter-spacing: -0.03em;
-  margin: 8px 0 12px;
+  margin: 0 0 12px;
 }
 .payBig small {
   font-size: 13px;
@@ -634,126 +689,6 @@
   background: var(--tile-active-strong);
   border-color: var(--border-focus);
   color: #f0e4cd;
-}
-
-/* Stückelung: antippen, was der Gast auf den Tresen legt - summiert sich.
-   Scheine eckig, Münzen rund; das trennt die beiden Gruppen ohne zweite
-   Zeile, die hier keinen Platz hätte. */
-.denomRow {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 10px;
-}
-.denomLabel {
-  flex: none;
-  font-size: 10px;
-  line-height: 1.15;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--text-muted);
-  text-align: right;
-}
-.denomGroup {
-  display: flex;
-  gap: 6px;
-}
-.denomSep {
-  flex: none;
-  width: 1px;
-  align-self: stretch;
-  margin: 2px 1px;
-  background: rgba(236, 233, 228, 0.16);
-}
-
-.noteBtn,
-.coinBtn {
-  display: inline-flex;
-  align-items: baseline;
-  justify-content: center;
-  gap: 2px;
-  font-variant-numeric: tabular-nums;
-  color: var(--text);
-  font-weight: 600;
-}
-.noteBtn small,
-.coinBtn small {
-  font-size: 10px;
-  font-weight: 500;
-  opacity: 0.7;
-}
-
-/* Schein: liegender Rahmen, warm hinterlegt */
-.noteBtn {
-  min-width: 54px;
-  height: var(--touch);
-  padding: 0 4px;
-  border-radius: 7px;
-  border: 1px solid var(--border-active);
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--accent) 16%, var(--tile)),
-    var(--tile)
-  );
-  font-size: 17px;
-}
-
-/* Münze: rund */
-.coinBtn {
-  width: var(--touch);
-  height: var(--touch);
-  border-radius: 50%;
-  border: 1px solid var(--border);
-  background: var(--tile);
-  font-size: 15px;
-}
-
-.noteBtn:active,
-.coinBtn:active {
-  background: var(--tile-active-strong);
-  border-color: var(--border-focus);
-  color: #f0e4cd;
-}
-
-.denomReset {
-  flex: none;
-  margin-left: auto;
-  width: var(--touch);
-  height: var(--touch);
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--border);
-  background: none;
-  color: var(--text-muted);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
-.denomReset:disabled {
-  opacity: 0.3;
-}
-
-.payPad {
-  display: flex;
-  flex-direction: column;
-  gap: 9px;
-  margin-bottom: 10px;
-}
-.payPadRow {
-  display: flex;
-  gap: 8px;
-}
-.ghostWide {
-  flex: 1;
-  min-height: var(--touch);
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--border-active);
-  color: var(--text);
-  font-size: 14px;
-  font-weight: 500;
-}
-.ghostWide:disabled {
-  opacity: 0.4;
-  border-color: var(--border);
 }
 
 /* Rueckgeld-Anzeige: das, was der Bediener dem Gast in die Hand zaehlt */

@@ -9,12 +9,10 @@ from sqlalchemy.orm import Session
 from core.clock import business_day
 from core.db import commit
 from core.exceptions import ConflictError, NotFoundError, ValidationError
-from core.money import check_money, clean_text, money
+from core.money import check_money, money
 from models import (
     Bill,
     BillItem,
-    CashFloat,
-    CashMovement,
     DayClose,
     DepositReturn,
     Event,
@@ -241,81 +239,6 @@ def day_summary(db: Session, event_id: int, day: date | None = None) -> DaySumma
     )
 
 
-def get_cash_float(db: Session, event_id: int, day: date | None = None) -> Decimal:
-    day = day or business_day()
-    row = db.get(CashFloat, (event_id, day))
-    return row.amount if row else ZERO
-
-
-def set_cash_float(
-    db: Session, event_id: int, amount: Decimal, day: date | None = None
-) -> Decimal:
-    check_money(amount, field="Startgeld")
-    day = day or business_day()
-    row = db.get(CashFloat, (event_id, day))
-    if row is None:
-        row = CashFloat(event_id=event_id, business_day=day, amount=amount)
-        db.add(row)
-    else:
-        row.amount = amount
-    commit(db)
-    return amount
-
-
-# --- Bargeldbewegungen ------------------------------------------
-def list_cash_movements(
-    db: Session, event_id: int, day: date | None = None
-) -> list[CashMovement]:
-    day = day or business_day()
-    return list(
-        db.scalars(
-            select(CashMovement)
-            .where(
-                CashMovement.event_id == event_id, CashMovement.business_day == day
-            )
-            .order_by(CashMovement.created_at, CashMovement.id)
-        )
-    )
-
-
-def add_cash_movement(
-    db: Session,
-    event_id: int,
-    amount: Decimal,
-    reason: str = "",
-    day: date | None = None,
-) -> CashMovement:
-    """Wechselgeld nachlegen (+) oder Geld in den Tresor bringen (−)."""
-    if amount == 0:
-        raise ValidationError("Betrag darf nicht 0 sein")
-    check_money(amount, field="Betrag", allow_negative=True)
-    if db.get(Event, event_id) is None:
-        raise NotFoundError("Veranstaltung nicht gefunden")
-
-    row = CashMovement(
-        event_id=event_id,
-        business_day=day or business_day(),
-        amount=money(amount),
-        reason=clean_text(reason)[:120],
-    )
-    db.add(row)
-    commit(db)
-    db.refresh(row)
-    return row
-
-
-def delete_cash_movement(db: Session, movement_id: int) -> None:
-    row = db.get(CashMovement, movement_id)
-    if row is None:
-        raise NotFoundError("Bargeldbewegung nicht gefunden")
-    db.delete(row)
-    commit(db)
-
-
-def cash_movement_total(db: Session, event_id: int, day: date | None = None) -> Decimal:
-    return sum((m.amount for m in list_cash_movements(db, event_id, day)), ZERO)
-
-
 def cash_count(db: Session, event_id: int, day: date | None = None) -> CashCountOut:
     """Kassenschnitt: was muss in der Lade sein, was ist drin."""
     day = day or business_day()
@@ -331,11 +254,7 @@ def cash_count(db: Session, event_id: int, day: date | None = None) -> CashCount
     # Bareinnahmen = Bon-Summen (Pfandrueckgabe im Bon ist dort schon abgezogen)
     # minus eigenstaendige Rueckgaben (Geld raus ohne Bon).
     cash_income = summary.net_total - standalone
-    opening = get_cash_float(db, event_id, day)
-    movements = cash_movement_total(db, event_id, day)
     marker = db.get(DayClose, (event_id, day))
-    counted = marker.counted_cash if marker else None
-    expected = opening + cash_income + movements
 
     return CashCountOut(
         event_id=event_id,
@@ -347,25 +266,17 @@ def cash_count(db: Session, event_id: int, day: date | None = None) -> CashCount
         deposit_return_in_bills=money(in_bills),
         standalone_deposit_return=money(standalone),
         cash_income=money(cash_income),
-        opening_float=money(opening),
-        movement_total=money(movements),
-        expected_cash=money(expected),
-        counted_cash=money(counted) if counted is not None else None,
-        difference=money(counted - expected) if counted is not None else None,
         closed=marker is not None,
         closed_at=marker.closed_at if marker else None,
     )
 
 
-def close_day(
-    db: Session,
-    event_id: int,
-    day: date | None = None,
-    counted_cash: Decimal | None = None,
-) -> DayClose:
+def close_day(db: Session, event_id: int, day: date | None = None) -> DayClose:
+    """Betriebstag als abgerechnet vermerken und sichern.
+
+    Ohne gezaehlten Bestand: siehe D41 in ARCHITEKTUR.md.
+    """
     day = day or business_day()
-    if counted_cash is not None:
-        check_money(counted_cash, field="Gezählter Bestand")
     summary = day_summary(db, event_id, day)
     marker = db.get(DayClose, (event_id, day))
     if marker is None:
@@ -373,9 +284,6 @@ def close_day(
         db.add(marker)
     marker.total_gross = summary.total_gross
     marker.total_deposit = summary.total_deposit
-    marker.opening_float = get_cash_float(db, event_id, day)
-    if counted_cash is not None:
-        marker.counted_cash = counted_cash
     commit(db)
     db.refresh(marker)
     _backup_after_close(event_id, day)

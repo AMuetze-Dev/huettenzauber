@@ -38,7 +38,14 @@ export function NumPad({
     onChange(base + ch);
   }
 
-  const shown = value === "" ? placeholder : masked ? "•".repeat(value.length) : value;
+  // Angezeigt wird deutsch: die Taste heisst "," und der ganze Rest des
+  // Programms schreibt 12,50 - ein Punkt im Feld liest sich wie ein Tippfehler.
+  const shown =
+    value === ""
+      ? placeholder
+      : masked
+        ? "•".repeat(value.length)
+        : value.replace(".", ",");
   const keys = ["7", "8", "9", "4", "5", "6", "1", "2", "3"];
 
   return (
